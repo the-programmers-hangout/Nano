@@ -14,7 +14,7 @@ class LoggingService(private val config: Configuration) {
         }
 
     fun interviewStarted(guild: Guild, user: User) = withLog(guild) {
-        "**Info ::** Interview with ${user.asMention} has started."
+        "**Info ::** Interview with ${user.name} has started."
     }
 
     fun submittedQuestion(guild: Guild, user: User) = withLog(guild) {

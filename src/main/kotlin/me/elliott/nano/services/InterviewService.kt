@@ -5,13 +5,13 @@ import me.aberrantfox.kjdautils.extensions.stdlib.idToUser
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.EmbedUtils
+import me.elliott.nano.util.Queue
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
 import java.awt.Color
-import java.util.*
 
 data class Interview(
         var intervieweeId: String = "insert-id",
@@ -22,14 +22,14 @@ data class Interview(
 data class Question(var event: GuildMessageReceivedEvent,
                     var questionText: String,
                     var reviewed: Boolean,
-                    var reviewNotificationid: String = "provide-id"
+                    var reviewNotificationId: String = "provide-id"
 )
 
 @Service
 class InterviewService(var configuration: Configuration) {
 
     var questionReviewStore = mutableMapOf<String, Question>()
-    var questionQueue = PriorityQueue<Question>()
+    var questionQueue = Queue<Question>()
 
     private var interview = Interview()
 
@@ -65,6 +65,7 @@ class InterviewService(var configuration: Configuration) {
     }
 
     fun queueQuestionForReview(question: Question) {
+
         val reviewChannel = question.event.jda.getTextChannelById(configuration
                 .getGuildConfig(question.event.guild.id)!!.reviewChannelId)
 
@@ -73,8 +74,9 @@ class InterviewService(var configuration: Configuration) {
         val reviewNotification = reviewChannel!!.sendMessage(EmbedUtils.buildQuestionReviewEmbed(question))
                 .complete()
 
+        question.reviewNotificationId = reviewNotification.id
 
-        question.reviewNotificationid = reviewNotification.id
+        questionReviewStore[question.reviewNotificationId] = question
 
         reviewNotification.addReaction("\u2705").complete()
         reviewNotification.addReaction("\u274C").complete()
@@ -92,7 +94,7 @@ class InterviewService(var configuration: Configuration) {
         questionReviewStore[event.messageId] = question
 
         if (approved)
-            questionQueue.add(question)
+            questionQueue.enqueue(question)
 
         val message = event.channel.retrieveMessageById(event.messageId).complete()
 

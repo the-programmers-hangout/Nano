@@ -11,7 +11,7 @@ class EmbedUtils {
 
         fun buildInterviewStartEmbed(interviewee: User, participantChannel: TextChannel, bio: String) =
                 embed {
-                    title("AMA Started - Please Submit Your Questions In ${participantChannel.asMention}")
+                    title("AMA Started - Please Submit Your Questions In ${participantChannel.name}")
                     setColor(Color.CYAN)
                     description("**Bio:** $bio")
                     setThumbnail(interviewee.avatarUrl)
@@ -29,12 +29,13 @@ class EmbedUtils {
                 embed {
                     title("Question Submitted")
                     setColor(Color.PINK)
-                    description("**${user.asMention}**'s question was successfully submitted for review.")
+                    description("**${user.name}**'s question was successfully submitted for review.")
                 }
 
         fun buildQuestionReviewEmbed(question: Question) =
                 embed {
-                    title("${question.event.author.asMention}'s Question:")
+                    title("${question.event.author.name}'s Question:")
+                    setThumbnail(question.event.author.avatarUrl)
                     setColor(Color.LIGHT_GRAY)
                     description(question.questionText)
                 }

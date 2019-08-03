@@ -2,6 +2,7 @@ package me.elliott.nano.commands
 
 import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
+import me.aberrantfox.kjdautils.extensions.jda.fullName
 import me.aberrantfox.kjdautils.internal.command.arguments.SentenceArg
 import me.aberrantfox.kjdautils.internal.command.arguments.TextChannelArg
 import me.aberrantfox.kjdautils.internal.command.arguments.UserArg
@@ -23,7 +24,7 @@ fun interviewCommands(interviewService: InterviewService, configuration: Configu
         execute {
             val user = it.args.component1() as User
             interviewService.setInterviewee(user)
-            return@execute it.respond("**Success:**${user.asMention} set as the interviewee.")
+            return@execute it.unsafeRespond("**Success:** ${user.name} set as the interviewee.")
         }
     }
 
@@ -34,7 +35,7 @@ fun interviewCommands(interviewService: InterviewService, configuration: Configu
         execute {
             val answerChannel = it.args.component1() as TextChannel
             interviewService.setAnswerChannel(answerChannel)
-            return@execute it.respond("**Success:** Question and answer pairings will be sent to: **${answerChannel.asMention}**.")
+            return@execute it.unsafeRespond("**Success:** Question and answer pairings will be sent to: **${answerChannel.asMention}**.")
         }
     }
 
@@ -57,7 +58,7 @@ fun interviewCommands(interviewService: InterviewService, configuration: Configu
                 interviewService.startInterview(it.guild!!)
                 it.respond("Interview Started!")
             } else {
-                it.respond(EmbedUtils.notComplete())
+                it.respond(EmbedUtils.buildNotCompleteEmbed())
             }
         }
     }
