@@ -42,6 +42,8 @@ class InterviewService(var configuration: Configuration) {
         hasInterviewee = true
     }
 
+    fun getInterview() = interview
+
     fun setAnswerChannel(answerChannel: TextChannel) {
         interview.answerChannel = answerChannel.id
         hasAnswerChannel = true

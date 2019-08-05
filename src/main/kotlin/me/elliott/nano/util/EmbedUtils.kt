@@ -11,11 +11,16 @@ class EmbedUtils {
 
         fun buildInterviewStartEmbed(interviewee: User, participantChannel: TextChannel, bio: String) =
                 embed {
-                    title("AMA Started - Please Submit Your Questions In ${participantChannel.name}")
+                    title("AMA Started - Please Submit Your Questions Below.")
                     setColor(Color.CYAN)
-                    description("**Bio:** $bio")
+                    description(bio)
                     setThumbnail(interviewee.avatarUrl)
                     setAuthor(interviewee.name)
+                    addBlankField(false)
+                    field {
+                        name = "Please begin your question with the following prefix: [Q&A]"
+                        value =  "**Example:** [Q&A] What's one of your favorite technologies?"
+                    }
                 }
 
         fun buildNotCompleteEmbed() =
@@ -37,6 +42,14 @@ class EmbedUtils {
                     title("${question.event.author.name}'s Question:")
                     setThumbnail(question.event.author.avatarUrl)
                     setColor(Color.LIGHT_GRAY)
+                    description(question.questionText)
+                }
+
+        fun buildQuestionEmbed(question: Question) =
+                embed {
+                    title("${question.event.author.name}'s Question:")
+                    setThumbnail(question.event.author.avatarUrl)
+                    setColor(Color.MAGENTA)
                     description(question.questionText)
                 }
     }
