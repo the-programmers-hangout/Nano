@@ -19,7 +19,7 @@ class EmbedUtils {
                     addBlankField(false)
                     field {
                         name = "Please begin your question with the following prefix: [Q&A]"
-                        value =  "**Example:** [Q&A] What's one of your favorite technologies?"
+                        value = "**Example:** [Q&A] What's one of your favorite technologies?"
                     }
                 }
 
@@ -40,15 +40,21 @@ class EmbedUtils {
         fun buildQuestionReviewEmbed(question: Question) =
                 embed {
                     title("${question.event.author.name}'s Question:")
-                    setThumbnail(question.event.author.avatarUrl)
                     setColor(Color.LIGHT_GRAY)
                     description(question.questionText)
+                }
+
+        fun buildResponseEmbed(interviewee: User, question: Question) =
+                embed {
+                    title("${interviewee.name} is answering ${question.event.author.name}'s Question:")
+                    setColor(Color.MAGENTA)
+                    description("**Question:** ${question.questionText}")
+                    setFooter("Asked by ${question.event.author.name}", question.event.author.avatarUrl)
                 }
 
         fun buildQuestionEmbed(question: Question) =
                 embed {
                     title("${question.event.author.name}'s Question:")
-                    setThumbnail(question.event.author.avatarUrl)
                     setColor(Color.MAGENTA)
                     description(question.questionText)
                 }

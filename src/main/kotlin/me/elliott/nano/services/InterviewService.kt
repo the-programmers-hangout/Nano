@@ -17,21 +17,24 @@ data class Interview(
         var intervieweeId: String = "insert-id",
         var answerChannel: String = "insert-id",
         var bio: String = "*Please set a bio.*"
+
 )
 
 data class Question(var event: GuildMessageReceivedEvent,
                     var questionText: String,
-                    var reviewed: Boolean,
+                    var reviewed: Boolean = false,
+                    var sentToAnswerChannel: Boolean = false,
                     var reviewNotificationId: String = "provide-id"
 )
 
 @Service
 class InterviewService(var configuration: Configuration) {
 
-    var questionReviewStore = mutableMapOf<String, Question>()
+    private var questionReviewStore = mutableMapOf<String, Question>()
     var questionQueue = Queue<Question>()
+    var interview = Interview()
+    var currentQuestion: Question? = null
 
-    private var interview = Interview()
 
     var hasInterviewee = false
     var hasAnswerChannel = false
@@ -42,15 +45,9 @@ class InterviewService(var configuration: Configuration) {
         hasInterviewee = true
     }
 
-    fun getInterview() = interview
-
     fun setAnswerChannel(answerChannel: TextChannel) {
         interview.answerChannel = answerChannel.id
         hasAnswerChannel = true
-    }
-
-    fun setBio(bio: String) {
-        interview.bio = bio
     }
 
     fun startInterview(guild: Guild) {
@@ -67,7 +64,6 @@ class InterviewService(var configuration: Configuration) {
     }
 
     fun queueQuestionForReview(question: Question) {
-
         val reviewChannel = question.event.jda.getTextChannelById(configuration
                 .getGuildConfig(question.event.guild.id)!!.reviewChannelId)
 
@@ -77,7 +73,6 @@ class InterviewService(var configuration: Configuration) {
                 .complete()
 
         question.reviewNotificationId = reviewNotification.id
-
         questionReviewStore[question.reviewNotificationId] = question
 
         reviewNotification.addReaction("\u2705").complete()

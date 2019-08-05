@@ -14,10 +14,9 @@ fun isIntervieweeAndCorrectChannelPrecondition(configuration: Configuration,
     val command = event.container.commands[event.commandStruct.commandName] ?: return@exit Pass
     if (command.category != Category) return@exit Pass
 
-    val interview = interviewService.getInterview()
+    val interview = interviewService.interview
 
-    if (event.author.id == interview.intervieweeId
-            && interview.answerChannel == event.channel.id) return@exit Pass
+    if (event.author.id == interview.intervieweeId) return@exit Pass
 
     return@exit Fail("You are not being interviewed, or you executed this command outside of the appropriate channel.")
 }
