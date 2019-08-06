@@ -11,12 +11,19 @@ class AnswerListener(private val interviewService: InterviewService, private val
     @Subscribe
     fun onPrivateMessageReceivedEvent(event: PrivateMessageReceivedEvent) {
 
-        if (event.author.isBot || !interviewService.interviewStarted ||
-                event.author.id != interviewService.interview.intervieweeId ||
+        if (event.author.isBot)
+            return
+
+        if (!interviewService.interviewRunning())
+            return
+
+        val interview = interviewService.interview!!
+
+        if (event.author.id != interviewService.interview!!.intervieweeId ||
                 event.message.contentRaw.startsWith(configuration.prefix)) return
 
         val question = interviewService.currentQuestion ?: return
-        val answerChannel = event.jda.getTextChannelById(interviewService.interview.answerChannel!!)!!
+        val answerChannel = event.jda.getTextChannelById(interview.answerChannel!!)!!
 
         if (!question.sentToAnswerChannel)
             answerChannel.sendMessage(EmbedUtils.buildResponseEmbed(event.author, question)).queue {

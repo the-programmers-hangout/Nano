@@ -10,18 +10,17 @@ class QuestionListener(private val interviewService: InterviewService, private v
 
     @Subscribe
     fun onGuildMessageReceivedEvent(event: GuildMessageReceivedEvent) {
-        val guildConfiguration = configuration.getGuildConfig(event.guild.id)!!
-        val user = event.author
-
-        if (user.isBot)
+        if (event.author.isBot)
             return
 
-        if (!interviewService.interviewStarted ||
+        val guildConfiguration = configuration.getGuildConfig(event.guild.id)!!
+
+        if (!interviewService.interviewRunning() ||
                 event.channel.id != guildConfiguration.participantChannelId) return
 
         if (event.message.contentRaw.startsWith("[Q&A]")) {
             interviewService.queueQuestionForReview(Question(event, event.message.contentRaw
-                    .removePrefix("[Q&A]"), reviewed = false))
+                    .removePrefix("[Q&A]"), reviewed = false), event.guild)
         }
     }
 }

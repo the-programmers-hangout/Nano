@@ -2,9 +2,6 @@ package me.elliott.nano.commands
 
 import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
-import me.aberrantfox.kjdautils.internal.command.arguments.UserArg
-import me.elliott.nano.services.InterviewService
-import net.dv8tion.jda.api.entities.User
 
 @CommandSet("Interview")
 fun utilityCommands() = commands {

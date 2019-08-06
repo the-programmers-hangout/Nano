@@ -3,10 +3,7 @@ package me.elliott.nano.commands
 import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
 import me.aberrantfox.kjdautils.extensions.jda.sendPrivateMessage
-import me.aberrantfox.kjdautils.internal.di.PersistenceService
-import me.elliott.nano.data.Configuration
 import me.elliott.nano.services.InterviewService
-import me.elliott.nano.services.Question
 import me.elliott.nano.util.EmbedUtils
 
 @CommandSet("Interviewee")

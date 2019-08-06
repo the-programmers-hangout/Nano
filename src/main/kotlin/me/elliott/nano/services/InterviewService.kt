@@ -1,13 +1,11 @@
 package me.elliott.nano.services
 
 import me.aberrantfox.kjdautils.api.annotation.Service
-import me.aberrantfox.kjdautils.extensions.stdlib.idToUser
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.EmbedUtils
 import me.elliott.nano.util.Queue
 import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
@@ -30,27 +28,27 @@ data class Question(val event: GuildMessageReceivedEvent,
 class InterviewService(val configuration: Configuration) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
+
     var questionQueue = Queue<Question>()
-    var interview: Interview? = null
     var currentQuestion: Question? = null
+    var interview: Interview? = null
 
-    fun hasAnswerChannel() = interview?.answerChannel != null
-    fun hasInterviewee() = interview?.intervieweeId != null
-    fun hasInterview() = interview != null
+    fun interviewRunning() = interview != null
 
-    fun startInterview(guild: Guild) {
+    private fun createAnswerChannel(interviewee: User, guild: Guild) =
+            guild.createTextChannel(interviewee.name).complete().id
+
+    fun createInterview(guild: Guild, interviewee: User, bio: String): Interview {
         val guildConfiguration = configuration.guildConfigurations.first { it.guildId == guild.id }
+        val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
 
-        if (hasInterviewee() && hasAnswerChannel()) {
-            val interviewee = interview?.intervieweeId!!.idToUser(guild.jda)
-            val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
+        participantChannel!!.sendMessage(EmbedUtils.buildInterviewStartEmbed(interviewee,
+                participantChannel, bio)).queue()
 
-            participantChannel!!.sendMessage(EmbedUtils.buildInterviewStartEmbed(interviewee,
-                    participantChannel, interview.bio)).queue()
-        }
+        return Interview(interviewee.id, createAnswerChannel(interviewee, guild), bio)
     }
 
-    fun queueQuestionForReview(question: Question) {
+    fun queueQuestionForReview(question: Question, guild: Guild) {
         val reviewChannel = question.event.jda.getTextChannelById(configuration
                 .getGuildConfig(question.event.guild.id)!!.reviewChannelId)
 
