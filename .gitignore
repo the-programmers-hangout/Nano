@@ -1,6 +1,5 @@
+nano.iml
 .idea/
 target/
 config/
-reports/
-velocity.log
 old-conf/

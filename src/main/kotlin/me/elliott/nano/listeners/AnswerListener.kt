@@ -15,15 +15,13 @@ class AnswerListener(private val interviewService: InterviewService, private val
                 event.author.id != interviewService.interview.intervieweeId ||
                 event.message.contentRaw.startsWith(configuration.prefix)) return
 
-        val question = interviewService.currentQuestion
-                ?: return
-        val answerChannel = event.jda.getTextChannelById(interviewService.interview.answerChannel)
+        val question = interviewService.currentQuestion ?: return
+        val answerChannel = event.jda.getTextChannelById(interviewService.interview.answerChannel!!)!!
 
         if (!question.sentToAnswerChannel)
-            answerChannel!!.sendMessage(EmbedUtils.buildResponseEmbed(event.author, question)).complete().also {
+            answerChannel.sendMessage(EmbedUtils.buildResponseEmbed(event.author, question)).queue {
                 question.sentToAnswerChannel = true
+                answerChannel.sendMessage("**${event.author.name}:** ${event.message.contentRaw}").queue()
             }
-
-        answerChannel!!.sendMessage("**${event.author.name}:** ${event.message.contentRaw}").complete()
     }
 }

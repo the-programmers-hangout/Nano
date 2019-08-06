@@ -19,7 +19,7 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
         expect(UserArg)
         execute {
             val user = it.args.component1() as User
-            interviewService.setInterviewee(user)
+            interviewService.interview.intervieweeId = user.id
             return@execute it.unsafeRespond("**Success:** ${user.name} set as the interviewee.")
         }
     }
@@ -30,8 +30,8 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
         expect(TextChannelArg)
         execute {
             val answerChannel = it.args.component1() as TextChannel
-            interviewService.setAnswerChannel(answerChannel)
-            return@execute it.unsafeRespond("**Success:** Question and answer pairings will be sent to: **${answerChannel.asMention}**.")
+            interviewService.interview.answerChannel = answerChannel.id
+            return@execute it.unsafeRespond("**Success:** Question and answer pairings will be sent to: ${answerChannel.asMention}.")
         }
     }
 
@@ -50,7 +50,7 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
         requiresGuild = true
         description = "Starts the interview"
         execute {
-            if (interviewService.hasInterviewee && interviewService.hasAnswerChannel) {
+            if (interviewService.hasInterviewee() && interviewService.hasAnswerChannel()) {
                 interviewService.startInterview(it.guild!!)
                 it.respond("Interview Started!")
             } else {

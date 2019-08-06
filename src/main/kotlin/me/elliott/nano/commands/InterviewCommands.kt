@@ -10,17 +10,15 @@ import me.elliott.nano.services.Question
 import me.elliott.nano.util.EmbedUtils
 
 @CommandSet("Interviewee")
-fun interviewCommannds(interviewService: InterviewService, configuration: Configuration,
-                       persistenceService: PersistenceService) = commands {
-
-    command("next") {
+fun interviewCommands(interviewService: InterviewService) = commands {
+    command("Next") {
         requiresGuild = false
         description = "Pulls the next question off the top of the queue."
         execute {
             val question = interviewService.questionQueue.dequeue()
-                    ?: it.respond("There are no questions currently in the queue.").also { return@execute }
+                    ?: return@execute it.respond("There are no questions currently in the queue.")
 
-            interviewService.currentQuestion = question as Question
+            interviewService.currentQuestion = question
             return@execute it.author.sendPrivateMessage(EmbedUtils.buildQuestionEmbed(question))
         }
     }

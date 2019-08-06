@@ -13,11 +13,8 @@ fun utilityCommands() = commands {
         requiresGuild = true
         description = "Clear all messages from a channel."
         execute {
-            it.channel.history.retrievePast(99).complete().also { messages ->
-                messages.forEach { message ->
-                    it.channel.deleteMessageById(message.id).queue()
-                }
-            }
+            val messages = it.channel.iterableHistory.complete()
+            it.channel.purgeMessages(messages)
         }
     }
 }
