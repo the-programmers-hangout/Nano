@@ -14,48 +14,35 @@ import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEve
 import java.awt.Color
 
 data class Interview(
-        var intervieweeId: String = "insert-id",
-        var answerChannel: String = "insert-id",
+        var intervieweeId: String? = null,
+        var answerChannel: String? = null,
         var bio: String = "*Please set a bio.*"
-
 )
 
-data class Question(var event: GuildMessageReceivedEvent,
-                    var questionText: String,
+data class Question(val event: GuildMessageReceivedEvent,
+                    val questionText: String,
                     var reviewed: Boolean = false,
                     var sentToAnswerChannel: Boolean = false,
                     var reviewNotificationId: String = "provide-id"
 )
 
 @Service
-class InterviewService(var configuration: Configuration) {
+class InterviewService(val configuration: Configuration) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
     var questionQueue = Queue<Question>()
-    var interview = Interview()
+    var interview: Interview? = null
     var currentQuestion: Question? = null
 
-
-    var hasInterviewee = false
-    var hasAnswerChannel = false
-    var interviewStarted = false
-
-    fun setInterviewee(interviewee: User) {
-        interview.intervieweeId = interviewee.id
-        hasInterviewee = true
-    }
-
-    fun setAnswerChannel(answerChannel: TextChannel) {
-        interview.answerChannel = answerChannel.id
-        hasAnswerChannel = true
-    }
+    fun hasAnswerChannel() = interview?.answerChannel != null
+    fun hasInterviewee() = interview?.intervieweeId != null
+    fun hasInterview() = interview != null
 
     fun startInterview(guild: Guild) {
         val guildConfiguration = configuration.guildConfigurations.first { it.guildId == guild.id }
 
-        if (hasInterviewee && hasAnswerChannel) {
-            interviewStarted = true
-            val interviewee = interview.intervieweeId.idToUser(guild.jda)
+        if (hasInterviewee() && hasAnswerChannel()) {
+            val interviewee = interview?.intervieweeId!!.idToUser(guild.jda)
             val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
 
             participantChannel!!.sendMessage(EmbedUtils.buildInterviewStartEmbed(interviewee,
@@ -69,15 +56,13 @@ class InterviewService(var configuration: Configuration) {
 
         question.event.channel.sendMessage(EmbedUtils.buildQuestionSubmittedEmbed(question.event.author)).queue()
 
-        val reviewNotification = reviewChannel!!.sendMessage(EmbedUtils.buildQuestionReviewEmbed(question))
-                .complete()
+        reviewChannel!!.sendMessage(EmbedUtils.buildQuestionReviewEmbed(question)).queue {
+            question.reviewNotificationId = it.id
+            questionReviewStore[question.reviewNotificationId] = question
 
-        question.reviewNotificationId = reviewNotification.id
-        questionReviewStore[question.reviewNotificationId] = question
-
-        reviewNotification.addReaction("\u2705").complete()
-        reviewNotification.addReaction("\u274C").complete()
-
+            it.addReaction("\u2705").queue()
+            it.addReaction("\u274C").queue()
+        }
     }
 
     fun processReviewEvent(event: GuildMessageReactionAddEvent, approved: Boolean) {

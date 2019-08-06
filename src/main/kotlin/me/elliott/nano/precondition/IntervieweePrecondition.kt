@@ -9,8 +9,7 @@ import me.elliott.nano.services.InterviewService
 private const val Category = "Interviewee"
 
 @Precondition
-fun isIntervieweeAndCorrectChannelPrecondition(configuration: Configuration,
-                                               interviewService: InterviewService) = exit@{ event: CommandEvent ->
+fun isIntervieweeAndCorrectChannelPrecondition(interviewService: InterviewService) = exit@{ event: CommandEvent ->
     val command = event.container.commands[event.commandStruct.commandName] ?: return@exit Pass
     if (command.category != Category) return@exit Pass
 
