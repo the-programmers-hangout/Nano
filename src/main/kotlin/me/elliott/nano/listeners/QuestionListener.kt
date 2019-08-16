@@ -18,9 +18,9 @@ class QuestionListener(private val interviewService: InterviewService, private v
         if (!interviewService.interviewRunning() ||
                 event.channel.id != guildConfiguration.participantChannelId) return
 
-        if (event.message.contentRaw.startsWith("[Q&A]")) {
+        if (event.message.contentRaw.startsWith(guildConfiguration.questionPrefix)) {
             interviewService.queueQuestionForReview(Question(event, event.message.contentRaw
-                    .removePrefix("[Q&A]"), reviewed = false), event.guild)
+                    .removePrefix(guildConfiguration.questionPrefix), reviewed = false), event.guild)
         }
     }
 }

@@ -9,7 +9,7 @@ import java.awt.Color
 class EmbedUtils {
     companion object {
 
-        fun buildInterviewStartEmbed(interviewee: User, participantChannel: TextChannel, bio: String) =
+        fun buildInterviewStartEmbed(interviewee: User, participantChannel: TextChannel, bio: String, questionPrefix: String) =
                 embed {
                     title("AMA Started - Please Submit Your Questions Below.")
                     setColor(Color.CYAN)
@@ -18,8 +18,8 @@ class EmbedUtils {
                     setAuthor(interviewee.name)
                     addBlankField(false)
                     field {
-                        name = "Please begin your question with the following prefix: [Q&A]"
-                        value = "**Example:** [Q&A] What's one of your favorite technologies?"
+                        name = "Please begin your question with the following prefix: $questionPrefix"
+                        value = "**Example:** $questionPrefix What's one of your favorite technologies?"
                     }
                 }
 
@@ -28,6 +28,30 @@ class EmbedUtils {
                     title("Error")
                     setColor(Color.RED)
                     description("**Please add an interviewee and answer channel to start an AMA.")
+                }
+
+        fun buildInterviewInstructionEmbed(prefix: String, botAvatarUrl: String) =
+                embed {
+                    setThumbnail(botAvatarUrl)
+                    title("How Do I Answer Questions?")
+                    description("When you're ready for the next question, simply " +
+                            "type: `${prefix.plus("next")}`. Whenever a question is displayed, " +
+                            "any replies you choose to provide will be sent to the interview answer channel until " +
+                            "you request the next question or end the interview.")
+
+                    field {
+                        name = "Ending The Interview"
+                        value = "When you're ready to end the interview, message a moderator and they will end it for you."
+                        inline = true
+                    }
+
+                    field {
+                        name = "Turn Typing Events On or Off"
+                        value = "If you want the bot to send your typing events to the answer channel, type " +
+                                "`${prefix.plus("SendTyping")} on/off` *(**On** by default)*"
+                        inline = true
+                    }
+                    setColor(Color.MAGENTA)
                 }
 
         fun buildQuestionSubmittedEmbed(user: User) =

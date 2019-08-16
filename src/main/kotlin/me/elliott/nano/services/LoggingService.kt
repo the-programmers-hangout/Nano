@@ -9,12 +9,16 @@ import net.dv8tion.jda.api.entities.User
 class LoggingService(private val config: Configuration) {
 
     private fun withLog(guild: Guild, f: () -> String) =
-        getLogConfig(guild.id).apply {
-            log(guild, getLogConfig(guild.id), f())
-        }
+            getLogConfig(guild.id).apply {
+                log(guild, getLogConfig(guild.id), f())
+            }
 
     fun interviewStarted(guild: Guild, user: User) = withLog(guild) {
         "**Info ::** Interview with ${user.name} has started."
+    }
+
+    fun directMessagesClosedError(guild: Guild, user: User) = withLog(guild) {
+        "**Error ::** ${user.asMention}'s DMs are not open. Please instruct them to allow DMs and try again."
     }
 
     fun submittedQuestion(guild: Guild, user: User) = withLog(guild) {
@@ -31,8 +35,8 @@ class LoggingService(private val config: Configuration) {
 
     private fun getLogConfig(guildId: String) = config.getGuildConfig(guildId)!!.loggingChannel
     private fun log(guild: Guild, logChannelId: String, message: String) =
-        logChannelId.takeIf { it.isNotEmpty() }?.idToTextChannel(guild)
-            ?.sendMessage(message)?.queue()
+            logChannelId.takeIf { it.isNotEmpty() }?.idToTextChannel(guild)
+                    ?.sendMessage(message)?.queue()
 
     private fun String.idToTextChannel(guild: Guild) = guild.jda.getTextChannelById(this)
 }

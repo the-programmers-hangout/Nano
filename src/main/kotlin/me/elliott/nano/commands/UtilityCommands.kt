@@ -5,7 +5,6 @@ import me.aberrantfox.kjdautils.api.dsl.commands
 
 @CommandSet("Interview")
 fun utilityCommands() = commands {
-
     command("ClearChannel") {
         requiresGuild = true
         description = "Clear all messages from a channel."

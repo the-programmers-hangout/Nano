@@ -7,7 +7,8 @@ data class GuildConfiguration(
     var staffRoleName: String = "Staff",
     var reviewChannelId: String = "insert-id",
     var participantChannelId: String = "insert-id",
-    var loggingChannel: String = "insert-id"
+    var loggingChannel: String = "insert-id",
+    var questionPrefix: String = "insert-prefix"
 )
 
 @Data("config/config.json")
