@@ -39,7 +39,8 @@ class InterviewService(private val configuration: Configuration, private val log
     fun interviewRunning() = interview != null
 
     private fun createAnswerChannel(interviewee: User, guild: Guild) =
-            guild.createTextChannel(interviewee.name).complete().id
+            guild.getCategoryById(configuration.getGuildConfig(guild.id)!!.categoryId)!!
+                    .createTextChannel(interviewee.name).complete().id
 
     fun createInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
 
