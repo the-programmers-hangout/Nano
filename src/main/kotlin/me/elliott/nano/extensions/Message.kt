@@ -3,7 +3,6 @@ package me.elliott.nano.extensions
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 
-
 fun MessageEmbed.toEmbedBuilder() =
         EmbedBuilder().apply {
             setTitle(title)
