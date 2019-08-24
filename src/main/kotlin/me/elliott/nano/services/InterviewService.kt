@@ -5,12 +5,13 @@ import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
 import me.elliott.nano.util.EmbedUtils
-import me.elliott.nano.util.Queue
+
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
 import java.awt.Color
+import java.util.concurrent.SynchronousQueue
 
 data class Interview(
         var intervieweeId: String,
@@ -31,7 +32,7 @@ class InterviewService(private val configuration: Configuration, private val log
 
     private var questionReviewStore = mutableMapOf<String, Question>()
 
-    var questionQueue = Queue<Question>()
+    var questionQueue = SynchronousQueue<Question>()
     var currentQuestion: Question? = null
     var interview: Interview? = null
 
@@ -92,7 +93,7 @@ class InterviewService(private val configuration: Configuration, private val log
         questionReviewStore[event.messageId] = question
 
         if (approved)
-            questionQueue.enqueue(question)
+            questionQueue.add(question)
 
         val message = event.channel.retrieveMessageById(event.messageId).complete()
 

@@ -13,8 +13,8 @@ fun interviewCommands(interviewService: InterviewService) = commands {
         requiresGuild = false
         description = "Pulls the next question off the top of the queue."
         execute {
-            val question = interviewService.questionQueue.dequeue()
-                    ?: return@execute it.respond("There are no questions currently in the queue.")
+            val question = interviewService.questionQueue.poll()
+                ?: return@execute it.respond("There are no questions currently in the queue.")
 
             interviewService.currentQuestion = question
             return@execute it.author.sendPrivateMessage(EmbedUtils.buildQuestionEmbed(question))
