@@ -1,11 +1,9 @@
 package me.elliott.nano.listeners
 
 import com.google.common.eventbus.Subscribe
-import me.aberrantfox.kjdautils.internal.command.tryRetrieveSnowflake
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.services.InterviewService
 import me.elliott.nano.util.EmbedUtils
-import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent
 import net.dv8tion.jda.api.events.user.UserTypingEvent
 
@@ -36,10 +34,7 @@ class AnswerListener(private val interviewService: InterviewService, private val
         val interview = interviewService.retrieveInterview() ?: return
         if (!interview.sendTyping) return
         if (interview.intervieweeId != event.user.id) return
-
-        val interviewChannel = tryRetrieveSnowflake(event.jda) {
-            it.getTextChannelById(interview.answerChannel)
-        } as TextChannel
+        val interviewChannel = event.jda.getTextChannelById(interview.answerChannel) ?: return
 
         interviewChannel.sendTyping().queue()
     }

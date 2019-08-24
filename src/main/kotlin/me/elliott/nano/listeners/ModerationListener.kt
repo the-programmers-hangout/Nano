@@ -9,14 +9,12 @@ class ModerationListener(private val interviewService: InterviewService, private
     @Subscribe
     fun onGuildMessageReactionAddEvent(event: GuildMessageReactionAddEvent) {
         val guildConfiguration = configuration.getGuildConfig(event.guild.id)!!
+        val channel = event.channel
 
-        if (event.user.isBot)
-            return
-
-        if (!interviewService.hasInterview() ||
-                event.channel.id != guildConfiguration.reviewChannelId) return
+        if (event.user.isBot) return
+        if (!interviewService.hasInterview() || channel.id != guildConfiguration.reviewChannelId) return
 
         val isApproved = event.reaction.reactionEmote.name == "✅"
-        interviewService.processReviewEvent(event, isApproved)
+        interviewService.processReviewEvent(channel, event.messageId, isApproved)
     }
 }

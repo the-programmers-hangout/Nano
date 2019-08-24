@@ -9,7 +9,6 @@ import java.awt.Color
 
 class EmbedUtils {
     companion object {
-
         fun buildInterviewStartEmbed(interviewee: User, participantChannel: TextChannel, bio: String, questionPrefix: String) =
                 embed {
                     title = "AMA Started - Please Submit Your Questions Below."
@@ -51,7 +50,7 @@ class EmbedUtils {
                                 "`${prefix.plus("SendTyping")} on/off` *(**On** by default)*"
                         inline = true
                     }
-                    setColor(Color.MAGENTA)
+                    color = Color.MAGENTA
                 }
 
         fun buildQuestionSubmittedEmbed(user: User) =

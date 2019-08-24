@@ -5,11 +5,9 @@ import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
 import me.elliott.nano.util.EmbedUtils
+import net.dv8tion.jda.api.entities.*
 
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
-import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
 import java.awt.Color
 import java.util.concurrent.SynchronousQueue
 
@@ -90,23 +88,23 @@ class InterviewService(private val configuration: Configuration, private val log
         }
     }
 
-    fun processReviewEvent(event: GuildMessageReactionAddEvent, approved: Boolean) {
-        val question = questionReviewStore.getOrElse(event.messageId) {
+    fun processReviewEvent(channel: TextChannel, messageId: String, approved: Boolean) {
+        val question = questionReviewStore.getOrElse(messageId) {
             return
         }
 
         if (question.reviewed) return
 
         question.reviewed = true
-        questionReviewStore[event.messageId] = question
+        questionReviewStore[messageId] = question
 
         if (approved)
             questionQueue.add(question)
 
-        val message = event.channel.retrieveMessageById(event.messageId).complete()
-
-        event.channel.editMessageById(message.id, message.embeds.first().toEmbedBuilder()
+        channel.retrieveMessageById(messageId).queue {
+            channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()
                 .setColor(if (approved) Color.GREEN else Color.RED).build()).queue()
+        }
     }
 }
 

@@ -10,9 +10,11 @@ fun isIntervieweePrecondition(interviewService: InterviewService) = exit@{ event
     val command = event.container.commands[event.commandStruct.commandName] ?: return@exit Pass
     if (command.category != Constants.INTERVIEWEE) return@exit Pass
 
-    val interview = interviewService.retrieveInterview() ?: return@exit Fail("Interview is not running.")
+    val interview = interviewService.retrieveInterview()
+        ?: return@exit Fail("Interview is not running.")
 
-    if (event.author.id == interview.intervieweeId) return@exit Pass
+    if (event.author.id != interview.intervieweeId)
+        return@exit Fail("You are not being interviewed.")
 
-    return@exit Fail("You are not being interviewed.")
+    return@exit Pass
 }

@@ -35,8 +35,7 @@ class LoggingService(private val config: Configuration) {
 
     private fun getLogConfig(guildId: String) = config.getGuildConfig(guildId)!!.loggingChannel
     private fun log(guild: Guild, logChannelId: String, message: String) =
-            logChannelId.takeIf { it.isNotEmpty() }?.idToTextChannel(guild)
-                    ?.sendMessage(message)?.queue()
+            logChannelId.takeIf { it.isNotEmpty() }?.idToTextChannel(guild)?.sendMessage(message)?.queue()
 
     private fun String.idToTextChannel(guild: Guild) = guild.jda.getTextChannelById(this)
 }
