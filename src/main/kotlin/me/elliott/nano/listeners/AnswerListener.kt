@@ -2,12 +2,11 @@ package me.elliott.nano.listeners
 
 import com.google.common.eventbus.Subscribe
 import me.elliott.nano.data.Configuration
-import me.elliott.nano.services.InterviewService
-import me.elliott.nano.util.EmbedUtils
+import me.elliott.nano.services.*
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent
 import net.dv8tion.jda.api.events.user.UserTypingEvent
 
-class AnswerListener(private val interviewService: InterviewService, private val configuration: Configuration) {
+class AnswerListener(private val configuration: Configuration, private val interviewService: InterviewService, private val embedService: EmbedService) {
 
     @Subscribe
     fun onPrivateMessageReceivedEvent(event: PrivateMessageReceivedEvent) {
@@ -21,7 +20,7 @@ class AnswerListener(private val interviewService: InterviewService, private val
         val answerChannel = event.jda.getTextChannelById(interview.answerChannel)!!
 
         if (!question.sentToAnswerChannel)
-            answerChannel.sendMessage(EmbedUtils.buildResponseEmbed(event.author, question)).complete().also {
+            answerChannel.sendMessage(embedService.buildResponseEmbed(event.author, question)).complete().also {
                 question.sentToAnswerChannel = true
                 it.addReaction("⭐").queue()
             }

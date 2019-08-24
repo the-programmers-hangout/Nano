@@ -1,13 +1,12 @@
 package me.elliott.nano.services
 
 import me.aberrantfox.kjdautils.api.annotation.Service
+import me.aberrantfox.kjdautils.discord.Discord
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
-import me.elliott.nano.util.EmbedUtils
 import net.dv8tion.jda.api.entities.*
 
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import java.awt.Color
 import java.util.concurrent.SynchronousQueue
 
@@ -18,15 +17,19 @@ data class Interview(
         var sendTyping: Boolean = true
 )
 
-data class Question(val event: GuildMessageReceivedEvent,
-                    val questionText: String,
-                    var reviewed: Boolean = false,
-                    var sentToAnswerChannel: Boolean = false,
-                    var reviewNotificationId: String = "provide-id"
+data class Question(
+    val authorId: String,
+    val questionText: String,
+    var reviewed: Boolean = false,
+    var sentToAnswerChannel: Boolean = false,
+    var reviewNotificationId: String = "provide-id"
 )
 
 @Service
-class InterviewService(private val configuration: Configuration, private val loggingService: LoggingService) {
+class InterviewService(private val configuration: Configuration,
+                       private val discord: Discord,
+                       private val embedService: EmbedService,
+                       private val loggingService: LoggingService) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
     private var questionQueue = SynchronousQueue<Question>()
@@ -48,13 +51,13 @@ class InterviewService(private val configuration: Configuration, private val log
         val guildConfiguration = configuration.guildConfigurations.first { it.guildId == guild.id }
         val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
 
-        participantChannel!!.sendMessage(EmbedUtils.buildInterviewStartEmbed(interviewee,
-                participantChannel, bio, guildConfiguration.questionPrefix)).complete().also {
+        participantChannel!!.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
+            guildConfiguration.questionPrefix)).complete().also {
             it.channel.pinMessageById(it.id).queue()
         }
 
         interviewee.openPrivateChannel().queue {
-            it.sendMessage(EmbedUtils.buildInterviewInstructionEmbed(configuration.prefix,
+            it.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix,
                     guild.jda.selfUser.effectiveAvatarUrl)).queue({
             }, {
                 loggingService.directMessagesClosedError(guild, interviewee)
@@ -74,12 +77,10 @@ class InterviewService(private val configuration: Configuration, private val log
     }
 
     fun queueQuestionForReview(question: Question, guild: Guild) {
-        val reviewChannel = question.event.jda.getTextChannelById(configuration
-                .getGuildConfig(question.event.guild.id)!!.reviewChannelId)
+        val reviewChannel = discord.jda.getTextChannelById(configuration
+                .getGuildConfig(guild.id)!!.reviewChannelId)
 
-        question.event.channel.sendMessage(EmbedUtils.buildQuestionSubmittedEmbed(question.event.author)).queue()
-
-        reviewChannel!!.sendMessage(EmbedUtils.buildQuestionReviewEmbed(question)).queue {
+        reviewChannel!!.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
             question.reviewNotificationId = it.id
             questionReviewStore[question.reviewNotificationId] = question
 

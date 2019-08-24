@@ -4,11 +4,11 @@ import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
 import me.aberrantfox.kjdautils.extensions.jda.sendPrivateMessage
 import me.aberrantfox.kjdautils.internal.arguments.OnOffArg
-import me.elliott.nano.services.InterviewService
-import me.elliott.nano.util.EmbedUtils
+import me.elliott.nano.services.*
+
 
 @CommandSet("Interviewee")
-fun interviewCommands(interviewService: InterviewService) = commands {
+fun interviewCommands(interviewService: InterviewService, embedService: EmbedService) = commands {
     command("Next") {
         requiresGuild = false
         description = "Pulls the next question off the top of the queue."
@@ -16,7 +16,7 @@ fun interviewCommands(interviewService: InterviewService) = commands {
             val question = interviewService.getCurrentQuestion()
                 ?: return@execute it.respond("There are no questions currently in the queue.")
 
-            it.author.sendPrivateMessage(EmbedUtils.buildQuestionEmbed(question))
+            it.author.sendPrivateMessage(embedService.buildQuestionEmbed(question))
         }
     }
 
