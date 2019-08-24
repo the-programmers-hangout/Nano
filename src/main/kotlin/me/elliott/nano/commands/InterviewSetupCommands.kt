@@ -2,8 +2,7 @@ package me.elliott.nano.commands
 
 import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
-import me.aberrantfox.kjdautils.internal.command.arguments.SentenceArg
-import me.aberrantfox.kjdautils.internal.command.arguments.UserArg
+import me.aberrantfox.kjdautils.internal.arguments.*
 import me.elliott.nano.services.InterviewCreationResult
 import me.elliott.nano.services.InterviewService
 import net.dv8tion.jda.api.entities.User

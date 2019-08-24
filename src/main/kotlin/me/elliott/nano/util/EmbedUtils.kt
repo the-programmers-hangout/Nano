@@ -1,6 +1,7 @@
 package me.elliott.nano.util
 
 import me.aberrantfox.kjdautils.api.dsl.embed
+import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.services.Question
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
@@ -11,33 +12,32 @@ class EmbedUtils {
 
         fun buildInterviewStartEmbed(interviewee: User, participantChannel: TextChannel, bio: String, questionPrefix: String) =
                 embed {
-                    title("AMA Started - Please Submit Your Questions Below.")
-                    setColor(Color.CYAN)
-                    description(bio)
-                    setThumbnail(interviewee.avatarUrl)
-                    setAuthor(interviewee.name)
+                    title = "AMA Started - Please Submit Your Questions Below."
+                    color = Color.CYAN
+                    description = bio
+                    thumbnail = interviewee.avatarUrl
                     addBlankField(false)
                     field {
                         name = "Please begin your question with the following prefix: $questionPrefix"
                         value = "**Example:** $questionPrefix What's one of your favorite technologies?"
                     }
-                }
+                }.toEmbedBuilder().setAuthor(interviewee.name).build()
 
         fun buildNotCompleteEmbed() =
                 embed {
-                    title("Error")
-                    setColor(Color.RED)
-                    description("**Please add an interviewee and answer channel to start an AMA.")
+                    title = "Error"
+                    color = Color.RED
+                    description = "**Please add an interviewee and answer channel to start an AMA."
                 }
 
         fun buildInterviewInstructionEmbed(prefix: String, botAvatarUrl: String) =
                 embed {
-                    setThumbnail(botAvatarUrl)
-                    title("How Do I Answer Questions?")
-                    description("When you're ready for the next question, simply " +
+                    thumbnail = botAvatarUrl
+                    title = "How Do I Answer Questions?"
+                    description = "When you're ready for the next question, simply " +
                             "type: `${prefix.plus("next")}`. Whenever a question is displayed, " +
                             "any replies you choose to provide will be sent to the interview answer channel until " +
-                            "you request the next question or end the interview.")
+                            "you request the next question or end the interview."
 
                     field {
                         name = "Ending The Interview"
@@ -56,31 +56,30 @@ class EmbedUtils {
 
         fun buildQuestionSubmittedEmbed(user: User) =
                 embed {
-                    title("Question Submitted")
-                    setColor(Color.PINK)
-                    description("**${user.name}**'s question was successfully submitted for review.")
+                    title = "Question Submitted"
+                    color = Color.PINK
+                    description = "**${user.name}**'s question was successfully submitted for review."
                 }
 
         fun buildQuestionReviewEmbed(question: Question) =
                 embed {
-                    title("${question.event.author.name}'s Question:")
-                    setColor(Color.LIGHT_GRAY)
-                    description(question.questionText)
+                    title = "${question.event.author.name}'s Question:"
+                    color = Color.LIGHT_GRAY
+                    description = question.questionText
                 }
 
         fun buildResponseEmbed(interviewee: User, question: Question) =
                 embed {
-                    title("${interviewee.name} is answering ${question.event.author.name}'s Question:")
-                    setColor(Color.MAGENTA)
-                    description("**Question:** ${question.questionText}")
-                    setFooter("Asked by ${question.event.author.name}", question.event.author.avatarUrl)
-                }
+                    title = "${interviewee.name} is answering ${question.event.author.name}'s Question:"
+                    color = Color.MAGENTA
+                    description = "**Question:** ${question.questionText}"
+                }.toEmbedBuilder().setFooter("Asked by ${question.event.author.name}", question.event.author.avatarUrl).build()
 
         fun buildQuestionEmbed(question: Question) =
                 embed {
-                    title("${question.event.author.name}'s Question:")
-                    setColor(Color.MAGENTA)
-                    description(question.questionText)
+                    title = "${question.event.author.name}'s Question:"
+                    color = Color.MAGENTA
+                    description = question.questionText
                 }
     }
 }
