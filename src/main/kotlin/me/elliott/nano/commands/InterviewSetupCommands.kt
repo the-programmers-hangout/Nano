@@ -23,8 +23,7 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
                     it.respond(result.message)
                 }
                 is InterviewCreationResult.Success -> {
-                    interviewService.interview = result.interview
-                    return@execute it.unsafeRespond("**Success:** ${user.name}'s interview has started!")
+                    it.unsafeRespond("**Success:** ${user.name}'s interview has started!")
                 }
             }
         }
@@ -33,13 +32,9 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
     command("StopInterview") {
         description = "Stop a currently running interview ."
         execute {
-            it.respond(if (interviewService.interviewRunning())
-                "**Success:** Interview has been stopped!" else "**Failure :** Interview is not running!")
+            val wasStopped = interviewService.stopInterview()
 
-            interviewService.interview = null
-            interviewService.questionQueue.clear()
-
-            return@execute
+            it.respond(if (wasStopped) "**Success:** Interview has been stopped!" else "**Failure :** Interview is not running!")
         }
     }
 }

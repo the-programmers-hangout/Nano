@@ -13,16 +13,13 @@ class AnswerListener(private val interviewService: InterviewService, private val
 
     @Subscribe
     fun onPrivateMessageReceivedEvent(event: PrivateMessageReceivedEvent) {
-
         if (event.author.isBot) return
-        if (!interviewService.interviewRunning()) return
+        val interview = interviewService.retrieveInterview() ?: return
 
-        val interview = interviewService.interview!!
-
-        if (event.author.id != interviewService.interview!!.intervieweeId ||
+        if (event.author.id != interview.intervieweeId ||
                 event.message.contentRaw.startsWith(configuration.prefix)) return
 
-        val question = interviewService.currentQuestion ?: return
+        val question = interviewService.getCurrentQuestion() ?: return
         val answerChannel = event.jda.getTextChannelById(interview.answerChannel)!!
 
         if (!question.sentToAnswerChannel)
@@ -36,9 +33,7 @@ class AnswerListener(private val interviewService: InterviewService, private val
     @Subscribe
     fun onUserTypingEvent(event: UserTypingEvent) {
         if (event.user.isBot) return
-        if (!interviewService.interviewRunning()) return
-
-        val interview = interviewService.interview!!
+        val interview = interviewService.retrieveInterview() ?: return
         if (!interview.sendTyping) return
         if (interview.intervieweeId != event.user.id) return
 

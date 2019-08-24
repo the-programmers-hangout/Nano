@@ -31,20 +31,19 @@ data class Question(val event: GuildMessageReceivedEvent,
 class InterviewService(private val configuration: Configuration, private val loggingService: LoggingService) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
+    private var questionQueue = SynchronousQueue<Question>()
+    private var interview: Interview? = null
 
-    var questionQueue = SynchronousQueue<Question>()
-    var currentQuestion: Question? = null
-    var interview: Interview? = null
+    fun retrieveInterview() = interview
+    fun hasInterview() = interview != null
 
-
-    fun interviewRunning() = interview != null
+    fun getCurrentQuestion(): Question? = questionQueue.poll()
 
     private fun createAnswerChannel(interviewee: User, guild: Guild) =
             guild.getCategoryById(configuration.getGuildConfig(guild.id)!!.categoryId)!!
                     .createTextChannel(interviewee.name).complete().id
 
     fun createInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
-
         var interviewCreationResult: InterviewCreationResult = InterviewCreationResult.Success(Interview(interviewee.id,
                 createAnswerChannel(interviewee, guild), bio))
 
@@ -65,6 +64,15 @@ class InterviewService(private val configuration: Configuration, private val log
             })
         }
         return interviewCreationResult
+    }
+
+    fun stopInterview(): Boolean {
+        interview ?: return false
+
+        interview = null
+        questionQueue.clear()
+
+        return true
     }
 
     fun queueQuestionForReview(question: Question, guild: Guild) {

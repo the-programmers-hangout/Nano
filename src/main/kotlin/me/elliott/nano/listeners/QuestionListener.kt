@@ -15,7 +15,7 @@ class QuestionListener(private val interviewService: InterviewService, private v
 
         val guildConfiguration = configuration.getGuildConfig(event.guild.id)!!
 
-        if (!interviewService.interviewRunning() ||
+        if (!interviewService.hasInterview() ||
                 event.channel.id != guildConfiguration.participantChannelId) return
 
         if (event.message.contentRaw.startsWith(guildConfiguration.questionPrefix)) {

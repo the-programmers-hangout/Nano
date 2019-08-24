@@ -13,11 +13,10 @@ fun interviewCommands(interviewService: InterviewService) = commands {
         requiresGuild = false
         description = "Pulls the next question off the top of the queue."
         execute {
-            val question = interviewService.questionQueue.poll()
+            val question = interviewService.getCurrentQuestion()
                 ?: return@execute it.respond("There are no questions currently in the queue.")
 
-            interviewService.currentQuestion = question
-            return@execute it.author.sendPrivateMessage(EmbedUtils.buildQuestionEmbed(question))
+            it.author.sendPrivateMessage(EmbedUtils.buildQuestionEmbed(question))
         }
     }
 
@@ -28,8 +27,9 @@ fun interviewCommands(interviewService: InterviewService) = commands {
         execute {
             val isOn = it.args.component1() as Boolean
             val response = if (isOn) "enabled" else "disabled"
+            val interview = interviewService.retrieveInterview() ?: return@execute
 
-            interviewService.interview!!.sendTyping = isOn
+            interview.sendTyping = isOn
             it.respond("Sending of typing events is now **$response**")
         }
     }
