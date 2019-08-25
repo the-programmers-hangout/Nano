@@ -32,19 +32,19 @@ class InterviewService(private val configuration: Configuration,
     fun getCurrentQuestion(): Question? = questionQueue.peek()
     fun getNextQuestion(): Question? = if (questionQueue.isEmpty()) null else questionQueue.removeFirst()
 
-    fun startInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
+    fun startInterview(guild: Guild, interviewee: User, bio: String): String {
         val jda = guild.jda
 
         val guildConfiguration = configuration.getGuildConfig(guild.id)
-            ?: return InterviewCreationResult.Error(Constants.MISSING_GUILD_CONFIG)
+            ?: return Constants.MISSING_GUILD_CONFIG
 
         val botCategory = guild.getCategoryById(guildConfiguration.categoryId)
-            ?: return InterviewCreationResult.Error(Constants.MISSING_CATEGORY_CONFIG)
+            ?: return Constants.MISSING_CATEGORY_CONFIG
 
         val answerChannel = botCategory.createTextChannel(interviewee.name).complete().id
 
         val participantChannel = jda.getTextChannelById(guildConfiguration.participantChannelId)
-            ?: return InterviewCreationResult.Error(Constants.MISSING_PARTICIPANT_CONFIG)
+            ?: return Constants.MISSING_PARTICIPANT_CONFIG
 
         participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
             guildConfiguration.questionPrefix)).queue {
@@ -52,7 +52,7 @@ class InterviewService(private val configuration: Configuration,
         }
 
         val privateChannel = interviewee.openPrivateChannel().complete()
-            ?: return InterviewCreationResult.Error(Constants.DM_CLOSED_ERROR).also {
+            ?: return Constants.DM_CLOSED_ERROR.also {
                 loggingService.directMessagesClosedError(guild, interviewee)
             }
 
@@ -60,9 +60,8 @@ class InterviewService(private val configuration: Configuration,
 
         privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix, avatar)).queue()
 
-        val tempInterview = Interview(interviewee.id, answerChannel)
-        interview = tempInterview
-        return InterviewCreationResult.Success(tempInterview)
+        interview = Interview(interviewee.id, answerChannel)
+        return "**Success:** ${interviewee.name}'s interview has started!"
     }
 
     fun stopInterview(): Boolean {
@@ -98,15 +97,5 @@ class InterviewService(private val configuration: Configuration,
             channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()
                 .setColor(if (approved) Color.GREEN else Color.RED).build()).queue()
         }
-    }
-}
-
-sealed class InterviewCreationResult {
-    data class Success(val interview: Interview) : InterviewCreationResult() {
-        companion object
-    }
-
-    data class Error(val message: String) : InterviewCreationResult() {
-        companion object
     }
 }
