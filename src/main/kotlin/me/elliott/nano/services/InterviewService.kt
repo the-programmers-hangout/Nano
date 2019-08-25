@@ -10,8 +10,7 @@ import java.util.ArrayDeque
 
 data class Interview(
         private var intervieweeId: String,
-        var answerChannel: String,
-        var bio: String,
+        val answerChannel: String,
         var sendTyping: Boolean = true
 ) {
     fun isBeingInterviewed(user: User) = user.id == intervieweeId
@@ -34,6 +33,8 @@ class InterviewService(private val configuration: Configuration,
     fun getNextQuestion(): Question? = if (questionQueue.isEmpty()) null else questionQueue.removeFirst()
 
     fun startInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
+        val jda = guild.jda
+
         val guildConfiguration = configuration.getGuildConfig(guild.id)
             ?: return InterviewCreationResult.Error(Constants.MISSING_GUILD_CONFIG)
 
@@ -42,7 +43,7 @@ class InterviewService(private val configuration: Configuration,
 
         val answerChannel = botCategory.createTextChannel(interviewee.name).complete().id
 
-        val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
+        val participantChannel = jda.getTextChannelById(guildConfiguration.participantChannelId)
             ?: return InterviewCreationResult.Error(Constants.MISSING_PARTICIPANT_CONFIG)
 
         participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
@@ -55,10 +56,11 @@ class InterviewService(private val configuration: Configuration,
                 loggingService.directMessagesClosedError(guild, interviewee)
             }
 
-        privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix,
-                    guild.jda.selfUser.effectiveAvatarUrl)).queue()
+        val avatar = jda.selfUser.effectiveAvatarUrl
 
-        val tempInterview = Interview(interviewee.id, answerChannel, bio)
+        privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix, avatar)).queue()
+
+        val tempInterview = Interview(interviewee.id, answerChannel)
         interview = tempInterview
         return InterviewCreationResult.Success(tempInterview)
     }
@@ -91,8 +93,6 @@ class InterviewService(private val configuration: Configuration,
 
         if (approved)
             questionQueue.add(question)
-
-        println("Question added into Queue: $question")
 
         channel.retrieveMessageById(messageId).queue {
             channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()

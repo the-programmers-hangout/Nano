@@ -6,8 +6,9 @@ import me.aberrantfox.kjdautils.extensions.jda.sendPrivateMessage
 import me.aberrantfox.kjdautils.internal.arguments.OnOffArg
 import me.elliott.nano.listeners.wasEmbedSent
 import me.elliott.nano.services.*
+import me.elliott.nano.util.Constants.Companion.INTERVIEWEE_CATEGORY
 
-@CommandSet("Interviewee")
+@CommandSet(INTERVIEWEE_CATEGORY)
 fun interviewCommands(interviewService: InterviewService, embedService: EmbedService) = commands {
     command("Next") {
         requiresGuild = false

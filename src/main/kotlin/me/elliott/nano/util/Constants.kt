@@ -2,7 +2,7 @@ package me.elliott.nano.util
 
 class Constants {
     companion object {
-        const val INTERVIEWEE = "Interviewee"
+        const val INTERVIEWEE_CATEGORY = "Interviewee"
 
         //Error messages
         const val MISSING_GUILD_CONFIG = "This guild is not configured for use."

@@ -13,19 +13,22 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
     command("StartInterview") {
         requiresGuild = true
         description = "Set the user to be interviewed."
-        expect(UserArg, SentenceArg)
+        expect(UserArg("Interviewee"), SentenceArg("Bio"))
         execute {
             val user = it.args.component1() as User
             val bio = it.args.component2() as String
 
-            when (val result = interviewService.startInterview(it.guild!!, user, bio)) {
-                is InterviewCreationResult.Error -> {
-                    it.respond(result.message)
-                }
-                is InterviewCreationResult.Success -> {
-                    it.unsafeRespond("**Success:** ${user.name}'s interview has started!")
-                }
+            if (interviewService.interviewInProgress())
+                return@execute it.respond("There is already an interview in progress.")
+
+            val creationResult = interviewService.startInterview(it.guild!!, user, bio)
+
+            val result = when (creationResult) {
+                is InterviewCreationResult.Error -> creationResult.message
+                is InterviewCreationResult.Success -> "**Success:** ${user.name}'s interview has started!"
             }
+
+            it.respond(result)
         }
     }
 
@@ -34,7 +37,13 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
         execute {
             val wasStopped = interviewService.stopInterview()
 
-            it.respond(if (wasStopped) "**Success:** Interview has been stopped!" else "**Failure :** Interview is not running!")
+            val response =
+                if (wasStopped)
+                    "**Success:** Interview has been stopped!"
+                else
+                    "**Failure:** Interview is not running!"
+
+            it.respond(response)
         }
     }
 }

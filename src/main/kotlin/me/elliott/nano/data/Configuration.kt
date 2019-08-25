@@ -15,7 +15,6 @@ data class GuildConfiguration(
 @Data("config/config.json")
 data class Configuration(
     val prefix: String = "-",
-    val generateDocsAtRuntime: Boolean = false,
     var guildConfigurations: MutableList<GuildConfiguration> = mutableListOf(GuildConfiguration())
 ) {
     fun getGuildConfig(guildId: String) = guildConfigurations.firstOrNull { it.guildId == guildId }
