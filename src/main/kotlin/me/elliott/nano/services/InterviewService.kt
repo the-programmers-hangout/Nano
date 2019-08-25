@@ -1,71 +1,66 @@
 package me.elliott.nano.services
 
 import me.aberrantfox.kjdautils.api.annotation.Service
-import me.aberrantfox.kjdautils.discord.Discord
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
 import net.dv8tion.jda.api.entities.*
-
 import java.awt.Color
-import java.util.concurrent.SynchronousQueue
+import java.util.ArrayDeque
 
 data class Interview(
         private var intervieweeId: String,
         var answerChannel: String,
-        var bio: String = "*Please set a bio.*",
+        var bio: String,
         var sendTyping: Boolean = true
 ) {
     fun isBeingInterviewed(user: User) = user.id == intervieweeId
 }
 
-data class Question(
-    val authorId: String,
-    val questionText: String,
-    var reviewed: Boolean = false,
-    var sentToAnswerChannel: Boolean = false,
-    var reviewNotificationId: String = "provide-id"
-)
+data class Question(val authorId: String, val questionText: String)
 
 @Service
 class InterviewService(private val configuration: Configuration,
-                       private val discord: Discord,
                        private val embedService: EmbedService,
                        private val loggingService: LoggingService) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
-    private var questionQueue = SynchronousQueue<Question>()
+    private var questionQueue = ArrayDeque<Question>()
     private var interview: Interview? = null
 
     fun retrieveInterview() = interview
     fun interviewInProgress() = interview != null
-    fun getCurrentQuestion(): Question? = questionQueue.poll()
-
-    private fun createAnswerChannel(interviewee: User, guild: Guild) =
-            guild.getCategoryById(configuration.getGuildConfig(guild.id)!!.categoryId)!!
-                    .createTextChannel(interviewee.name).complete().id
+    fun getCurrentQuestion(): Question? = questionQueue.peek()
+    fun getNextQuestion(): Question? = if (questionQueue.isEmpty()) null else questionQueue.removeFirst()
 
     fun startInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
-        var interviewCreationResult: InterviewCreationResult = InterviewCreationResult.Success(Interview(interviewee.id,
-                createAnswerChannel(interviewee, guild), bio))
+        val guildConfiguration = configuration.getGuildConfig(guild.id)
+            ?: return InterviewCreationResult.Error(Constants.MISSING_GUILD_CONFIG)
 
-        val guildConfiguration = configuration.guildConfigurations.first { it.guildId == guild.id }
+        val botCategory = guild.getCategoryById(guildConfiguration.categoryId)
+            ?: return InterviewCreationResult.Error(Constants.MISSING_CATEGORY_CONFIG)
+
+        val answerChannel = botCategory.createTextChannel(interviewee.name).complete().id
+
         val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
+            ?: return InterviewCreationResult.Error(Constants.MISSING_PARTICIPANT_CONFIG)
 
-        participantChannel!!.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
-            guildConfiguration.questionPrefix)).complete().also {
+        participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
+            guildConfiguration.questionPrefix)).queue {
             it.channel.pinMessageById(it.id).queue()
         }
 
-        interviewee.openPrivateChannel().queue {
-            it.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix,
-                    guild.jda.selfUser.effectiveAvatarUrl)).queue({
-            }, {
+        val privateChannel = interviewee.openPrivateChannel().complete()
+            ?: return InterviewCreationResult.Error(Constants.DM_CLOSED_ERROR).also {
                 loggingService.directMessagesClosedError(guild, interviewee)
-                interviewCreationResult = InterviewCreationResult.Error(Constants.DM_CLOSED_ERROR)
-            })
-        }
-        return interviewCreationResult
+            }
+
+        privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix,
+                    guild.jda.selfUser.effectiveAvatarUrl)).queue()
+
+        val tempInterview = Interview(interviewee.id, answerChannel, bio)
+        interview = tempInterview
+        return InterviewCreationResult.Success(tempInterview)
     }
 
     fun stopInterview(): Boolean {
@@ -78,12 +73,11 @@ class InterviewService(private val configuration: Configuration,
     }
 
     fun queueQuestionForReview(question: Question, guild: Guild) {
-        val reviewChannel = discord.jda.getTextChannelById(configuration
-                .getGuildConfig(guild.id)!!.reviewChannelId) ?: return
+        val guildConfiguration = configuration.getGuildConfig(guild.id) ?: return
+        val reviewChannel = guild.getTextChannelById(guildConfiguration.reviewChannelId) ?: return
 
         reviewChannel.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
-            question.reviewNotificationId = it.id
-            questionReviewStore[question.reviewNotificationId] = question
+            questionReviewStore[it.id] = question
 
             it.addReaction("\u2705").queue()
             it.addReaction("\u274C").queue()
@@ -93,13 +87,12 @@ class InterviewService(private val configuration: Configuration,
     fun processReviewEvent(channel: TextChannel, messageId: String, approved: Boolean) {
         val question = questionReviewStore[messageId] ?: return
 
-        if (question.reviewed) return
-
-        question.reviewed = true
-        questionReviewStore[messageId] = question
+        if (question in questionQueue) return
 
         if (approved)
             questionQueue.add(question)
+
+        println("Question added into Queue: $question")
 
         channel.retrieveMessageById(messageId).queue {
             channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()

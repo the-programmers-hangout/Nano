@@ -14,15 +14,15 @@ class QuestionListener(private val configuration: Configuration, private val int
         val channel = event.channel
         val messageText = event.message.contentRaw
 
+        if (!interviewService.interviewInProgress()) return
         if (author.isBot) return
 
-        val guildConfiguration = configuration.getGuildConfig(guild.id)!!
-
-        if (!interviewService.interviewInProgress() || channel.id != guildConfiguration.participantChannelId) return
+        val guildConfiguration = configuration.getGuildConfig(guild.id) ?: return
+        if (channel.id != guildConfiguration.participantChannelId) return
 
         if (messageText.startsWith(guildConfiguration.questionPrefix)) {
             val prefix = guildConfiguration.questionPrefix
-            interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(prefix), reviewed = false), guild)
+            interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(prefix)), guild)
 
             channel.sendMessage(EmbedService.buildQuestionSubmittedEmbed(author)).queue()
         }
