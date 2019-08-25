@@ -1,41 +1,31 @@
 package me.elliott.nano.services
 
 import me.aberrantfox.kjdautils.api.annotation.Service
+import me.aberrantfox.kjdautils.extensions.jda.fullName
 import me.elliott.nano.data.Configuration
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.entities.*
 
 @Service
 class LoggingService(private val configuration: Configuration) {
+    fun interviewStarted(guild: Guild, user: User) =
+        log(guild, "**Info ::** Interview with ${user.name} has started.")
 
-    private fun withLog(guild: Guild, f: () -> String) =
-            getLogConfig(guild.id).apply {
-                log(guild, getLogConfig(guild.id), f())
-            }
+    fun directMessagesClosedError(guild: Guild, user: User) =
+        log(guild, "**Error ::** ${user.asMention}'s DMs are not open. Please instruct them to allow DMs and try again.")
 
-    fun interviewStarted(guild: Guild, user: User) = withLog(guild) {
-        "**Info ::** Interview with ${user.name} has started."
+    fun submittedQuestion(guild: Guild, user: User) =
+        log(guild, "**Info ::** ${user.asMention} has submitted a question for review.")
+
+    fun questionApproved(guild: Guild, user: User, submitter: User) =
+        log(guild, "**Info ::** ${user.fullName()} approved ${submitter.asMention}'s question.")
+
+    fun questionDenied(guild: Guild, user: User, submitter: User) =
+        log(guild, "**Info ::** ${user.fullName()} denied ${submitter.asMention}'s question.")
+
+    private fun log(guild: Guild, message: String) = retrieveLoggingChannel(guild)?.sendMessage(message)?.queue()
+
+    private fun retrieveLoggingChannel(guild: Guild): TextChannel? {
+        val channelId = configuration.loggingChannel.takeIf { it.isNotEmpty() } ?: return null
+        return guild.jda.getTextChannelById(channelId)
     }
-
-    fun directMessagesClosedError(guild: Guild, user: User) = withLog(guild) {
-        "**Error ::** ${user.asMention}'s DMs are not open. Please instruct them to allow DMs and try again."
-    }
-
-    fun submittedQuestion(guild: Guild, user: User) = withLog(guild) {
-        "**Info ::** ${user.asMention} has submitted a question for review."
-    }
-
-    fun questionApproved(guild: Guild, user: User, submitter: User) = withLog(guild) {
-        "**Info ::** ${user.asMention} approved ${submitter.asMention}'s question."
-    }
-
-    fun questionDenied(guild: Guild, user: User, submitter: User) = withLog(guild) {
-        "**Info ::** ${user.asMention} denied ${submitter.asMention}'s question."
-    }
-
-    private fun getLogConfig(guildId: String) = configuration.loggingChannel
-    private fun log(guild: Guild, logChannelId: String, message: String) =
-            logChannelId.takeIf { it.isNotEmpty() }?.idToTextChannel(guild)?.sendMessage(message)?.queue()
-
-    private fun String.idToTextChannel(guild: Guild) = guild.jda.getTextChannelById(this)
 }

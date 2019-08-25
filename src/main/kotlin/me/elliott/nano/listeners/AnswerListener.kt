@@ -31,7 +31,7 @@ class AnswerListener(private val configuration: Configuration, private val inter
             }
         }
 
-        answerChannel.sendMessage("**${author.name}:** $messageText").complete().also {
+        answerChannel.sendMessage("**${author.name}:** $messageText").queue {
             interviewService.addAnswerToMap(event.messageId, it.id)
         }
     }

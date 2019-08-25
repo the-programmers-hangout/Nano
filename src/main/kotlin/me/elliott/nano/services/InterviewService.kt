@@ -44,7 +44,7 @@ class InterviewService(private val configuration: Configuration,
 
     fun editAnswerChannelMessage(privateMessageId: String, updatedText: String, jda: JDA) {
         val answerChannel = jda.getTextChannelById(interview!!.answerChannel) ?: return
-        val answerChannelMessageId = answerMessageMap.getOrElse(privateMessageId, { return })
+        val answerChannelMessageId = answerMessageMap[privateMessageId] ?: return
         answerChannel.editMessageById(answerChannelMessageId, updatedText).queue()
     }
 
