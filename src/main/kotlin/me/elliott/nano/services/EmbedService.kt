@@ -16,10 +16,9 @@ class EmbedService(private val discord: Discord) {
         val authorName = author?.name ?: "Unknown user"
 
         return embed {
-            title = "$authorName's Question:"
             color = Color.MAGENTA
             description = question.questionText
-        }
+        }.toEmbedBuilder().setFooter("Asked by $authorName", author?.effectiveAvatarUrl).build()
     }
 
     fun buildQuestionReviewEmbed(question: Question): MessageEmbed {
@@ -27,10 +26,9 @@ class EmbedService(private val discord: Discord) {
         val authorName = author?.name ?: "Unknown user"
 
         return embed {
-            title = "$authorName's Question:"
             color = Color.LIGHT_GRAY
             description = question.questionText
-        }
+        }.toEmbedBuilder().setFooter("Asked by $authorName", author?.effectiveAvatarUrl).build()
     }
 
     fun buildResponseEmbed(interviewee: User, question: Question): MessageEmbed {
@@ -46,47 +44,47 @@ class EmbedService(private val discord: Discord) {
 
     companion object {
         fun buildInterviewStartEmbed(interviewee: User, bio: String, questionPrefix: String) =
-            embed {
-                title = "AMA Started - Please Submit Your Questions Below."
-                color = Color.CYAN
-                description = bio
-                thumbnail = interviewee.avatarUrl
-                addBlankField(false)
-                field {
-                    name = "Please begin your question with the following prefix: $questionPrefix"
-                    value = "**Example:** $questionPrefix What's one of your favorite technologies?"
-                }
-            }.toEmbedBuilder().setAuthor(interviewee.name).build()
+                embed {
+                    title = "AMA Started - Please Submit Your Questions Below."
+                    color = Color.CYAN
+                    description = bio
+                    thumbnail = interviewee.avatarUrl
+                    addBlankField(false)
+                    field {
+                        name = "Please begin your question with the following prefix: $questionPrefix"
+                        value = "**Example:** $questionPrefix What's one of your favorite technologies?"
+                    }
+                }.toEmbedBuilder().setAuthor(interviewee.name).build()
 
         fun buildInterviewInstructionEmbed(prefix: String, botAvatarUrl: String) =
-            embed {
-                thumbnail = botAvatarUrl
-                title = "How Do I Answer Questions?"
-                description = "When you're ready for the next question, simply " +
-                    "type: `${prefix.plus("next")}`. Whenever a question is displayed, " +
-                    "any replies you choose to provide will be sent to the interview answer channel until " +
-                    "you request the next question or end the interview."
+                embed {
+                    thumbnail = botAvatarUrl
+                    title = "How Do I Answer Questions?"
+                    description = "When you're ready for the next question, simply " +
+                            "type: `${prefix.plus("next")}`. Whenever a question is displayed, " +
+                            "any replies you choose to provide will be sent to the interview answer channel until " +
+                            "you request the next question or end the interview."
 
-                field {
-                    name = "Ending The Interview"
-                    value = "When you're ready to end the interview, message a moderator and they will end it for you."
-                    inline = true
-                }
+                    field {
+                        name = "Ending The Interview"
+                        value = "When you're ready to end the interview, message a moderator and they will end it for you."
+                        inline = true
+                    }
 
-                field {
-                    name = "Turn Typing Events On or Off"
-                    value = "If you want the bot to send your typing events to the answer channel, type " +
-                        "`${prefix.plus("SendTyping")} on/off` *(**On** by default)*"
-                    inline = true
+                    field {
+                        name = "Turn Typing Events On or Off"
+                        value = "If you want the bot to send your typing events to the answer channel, type " +
+                                "`${prefix.plus("SendTyping")} on/off` *(**On** by default)*"
+                        inline = true
+                    }
+                    color = Color.MAGENTA
                 }
-                color = Color.MAGENTA
-            }
 
         fun buildQuestionSubmittedEmbed(user: User) =
-            embed {
-                title = "Question Submitted"
-                color = Color.PINK
-                description = "**${user.name}**'s question was successfully submitted for review."
-            }
+                embed {
+                    title = "Question Submitted"
+                    color = Color.PINK
+                    description = "**${user.name}**'s question was successfully submitted for review."
+                }
     }
 }

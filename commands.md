@@ -6,11 +6,11 @@
 | (Argument) | This argument is optional. |
 
 ## Interview
-| Commands       | Arguments        | Description                          |
-| -------------- | ---------------- | ------------------------------------ |
-| ClearChannel   | <none>           | Clear all messages from a channel.   |
-| StartInterview | Interviewee, Bio | Set the user to be interviewed.      |
-| StopInterview  | <none>           | Stop a currently running interview . |
+| Commands       | Arguments        | Description                         |
+| -------------- | ---------------- | ----------------------------------- |
+| ClearChannel   | <none>           | Clear all messages from a channel.  |
+| StartInterview | Interviewee, Bio | Set the user to be interviewed.     |
+| StopInterview  | <none>           | Stop a currently running interview. |
 
 ## Interviewee
 | Commands   | Arguments | Description                                                      |
