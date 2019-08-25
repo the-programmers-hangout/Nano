@@ -3,21 +3,22 @@ package me.elliott.nano.commands
 import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
 import me.aberrantfox.kjdautils.extensions.jda.sendPrivateMessage
-import me.aberrantfox.kjdautils.internal.command.arguments.OnOffArg
-import me.elliott.nano.services.InterviewService
-import me.elliott.nano.util.EmbedUtils
+import me.aberrantfox.kjdautils.internal.arguments.OnOffArg
+import me.elliott.nano.listeners.wasEmbedSent
+import me.elliott.nano.services.*
+import me.elliott.nano.util.Constants.Companion.INTERVIEWEE_CATEGORY
 
-@CommandSet("Interviewee")
-fun interviewCommands(interviewService: InterviewService) = commands {
+@CommandSet(INTERVIEWEE_CATEGORY)
+fun interviewCommands(interviewService: InterviewService, embedService: EmbedService) = commands {
     command("Next") {
         requiresGuild = false
         description = "Pulls the next question off the top of the queue."
         execute {
-            val question = interviewService.questionQueue.dequeue()
-                    ?: return@execute it.respond("There are no questions currently in the queue.")
+            val question = interviewService.getNextQuestion()
+                ?: return@execute it.respond("There are no questions currently in the queue.")
 
-            interviewService.currentQuestion = question
-            return@execute it.author.sendPrivateMessage(EmbedUtils.buildQuestionEmbed(question))
+            wasEmbedSent = false
+            it.author.sendPrivateMessage(embedService.buildQuestionEmbed(question))
         }
     }
 
@@ -28,8 +29,9 @@ fun interviewCommands(interviewService: InterviewService) = commands {
         execute {
             val isOn = it.args.component1() as Boolean
             val response = if (isOn) "enabled" else "disabled"
+            val interview = interviewService.retrieveInterview() ?: return@execute
 
-            interviewService.interview!!.sendTyping = isOn
+            interview.sendTyping = isOn
             it.respond("Sending of typing events is now **$response**")
         }
     }

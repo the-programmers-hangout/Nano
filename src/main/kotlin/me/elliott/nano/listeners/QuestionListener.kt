@@ -2,25 +2,29 @@ package me.elliott.nano.listeners
 
 import com.google.common.eventbus.Subscribe
 import me.elliott.nano.data.Configuration
-import me.elliott.nano.services.InterviewService
-import me.elliott.nano.services.Question
+import me.elliott.nano.services.*
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 
-class QuestionListener(private val interviewService: InterviewService, private val configuration: Configuration) {
+class QuestionListener(private val configuration: Configuration, private val interviewService: InterviewService) {
 
     @Subscribe
     fun onGuildMessageReceivedEvent(event: GuildMessageReceivedEvent) {
-        if (event.author.isBot)
-            return
+        val author = event.author
+        val guild = event.guild
+        val channel = event.channel
+        val messageText = event.message.contentRaw
 
-        val guildConfiguration = configuration.getGuildConfig(event.guild.id)!!
+        if (!interviewService.interviewInProgress()) return
+        if (author.isBot) return
 
-        if (!interviewService.interviewRunning() ||
-                event.channel.id != guildConfiguration.participantChannelId) return
+        val guildConfiguration = configuration.getGuildConfig(guild.id) ?: return
+        if (channel.id != guildConfiguration.participantChannelId) return
 
-        if (event.message.contentRaw.startsWith(guildConfiguration.questionPrefix)) {
-            interviewService.queueQuestionForReview(Question(event, event.message.contentRaw
-                    .removePrefix(guildConfiguration.questionPrefix), reviewed = false), event.guild)
+        if (messageText.startsWith(guildConfiguration.questionPrefix)) {
+            val prefix = guildConfiguration.questionPrefix
+            interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(prefix)), guild)
+
+            channel.sendMessage(EmbedService.buildQuestionSubmittedEmbed(author)).queue()
         }
     }
 }

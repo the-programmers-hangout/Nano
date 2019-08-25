@@ -4,109 +4,98 @@ import me.aberrantfox.kjdautils.api.annotation.Service
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
-import me.elliott.nano.util.EmbedUtils
-import me.elliott.nano.util.Queue
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
-import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
+import net.dv8tion.jda.api.entities.*
 import java.awt.Color
+import java.util.ArrayDeque
 
 data class Interview(
-        var intervieweeId: String,
-        var answerChannel: String,
-        var bio: String = "*Please set a bio.*",
+        private var intervieweeId: String,
+        val answerChannel: String,
         var sendTyping: Boolean = true
-)
+) {
+    fun isBeingInterviewed(user: User) = user.id == intervieweeId
+}
 
-data class Question(val event: GuildMessageReceivedEvent,
-                    val questionText: String,
-                    var reviewed: Boolean = false,
-                    var sentToAnswerChannel: Boolean = false,
-                    var reviewNotificationId: String = "provide-id"
-)
+data class Question(val authorId: String, val questionText: String)
 
 @Service
-class InterviewService(private val configuration: Configuration, private val loggingService: LoggingService) {
+class InterviewService(private val configuration: Configuration,
+                       private val embedService: EmbedService,
+                       private val loggingService: LoggingService) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
+    private var questionQueue = ArrayDeque<Question>()
+    private var interview: Interview? = null
 
-    var questionQueue = Queue<Question>()
-    var currentQuestion: Question? = null
-    var interview: Interview? = null
+    fun retrieveInterview() = interview
+    fun interviewInProgress() = interview != null
+    fun getCurrentQuestion(): Question? = questionQueue.peek()
+    fun getNextQuestion(): Question? = if (questionQueue.isEmpty()) null else questionQueue.removeFirst()
 
+    fun startInterview(guild: Guild, interviewee: User, bio: String): String {
+        val jda = guild.jda
 
-    fun interviewRunning() = interview != null
+        val guildConfiguration = configuration.getGuildConfig(guild.id)
+            ?: return Constants.MISSING_GUILD_CONFIG
 
-    private fun createAnswerChannel(interviewee: User, guild: Guild) =
-            guild.getCategoryById(configuration.getGuildConfig(guild.id)!!.categoryId)!!
-                    .createTextChannel(interviewee.name).complete().id
+        val botCategory = guild.getCategoryById(guildConfiguration.categoryId)
+            ?: return Constants.MISSING_CATEGORY_CONFIG
 
-    fun createInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
+        val answerChannel = botCategory.createTextChannel(interviewee.name).complete().id
 
-        var interviewCreationResult: InterviewCreationResult = InterviewCreationResult.Success(Interview(interviewee.id,
-                createAnswerChannel(interviewee, guild), bio))
+        val participantChannel = jda.getTextChannelById(guildConfiguration.participantChannelId)
+            ?: return Constants.MISSING_PARTICIPANT_CONFIG
 
-        val guildConfiguration = configuration.guildConfigurations.first { it.guildId == guild.id }
-        val participantChannel = guild.jda.getTextChannelById(guildConfiguration.participantChannelId)
-
-        participantChannel!!.sendMessage(EmbedUtils.buildInterviewStartEmbed(interviewee,
-                participantChannel, bio, guildConfiguration.questionPrefix)).complete().also {
+        participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
+            guildConfiguration.questionPrefix)).queue {
             it.channel.pinMessageById(it.id).queue()
         }
 
-        interviewee.openPrivateChannel().queue {
-            it.sendMessage(EmbedUtils.buildInterviewInstructionEmbed(configuration.prefix,
-                    guild.jda.selfUser.effectiveAvatarUrl)).queue({
-            }, {
+        val privateChannel = interviewee.openPrivateChannel().complete()
+            ?: return Constants.DM_CLOSED_ERROR.also {
                 loggingService.directMessagesClosedError(guild, interviewee)
-                interviewCreationResult = InterviewCreationResult.Error(Constants.DM_CLOSED_ERROR)
-            })
-        }
-        return interviewCreationResult
+            }
+
+        val avatar = jda.selfUser.effectiveAvatarUrl
+
+        privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix, avatar)).queue()
+
+        interview = Interview(interviewee.id, answerChannel)
+        return "**Success:** ${interviewee.name}'s interview has started!"
+    }
+
+    fun stopInterview(): Boolean {
+        interview ?: return false
+
+        interview = null
+        questionQueue.clear()
+
+        return true
     }
 
     fun queueQuestionForReview(question: Question, guild: Guild) {
-        val reviewChannel = question.event.jda.getTextChannelById(configuration
-                .getGuildConfig(question.event.guild.id)!!.reviewChannelId)
+        val guildConfiguration = configuration.getGuildConfig(guild.id) ?: return
+        val reviewChannel = guild.getTextChannelById(guildConfiguration.reviewChannelId) ?: return
 
-        question.event.channel.sendMessage(EmbedUtils.buildQuestionSubmittedEmbed(question.event.author)).queue()
-
-        reviewChannel!!.sendMessage(EmbedUtils.buildQuestionReviewEmbed(question)).queue {
-            question.reviewNotificationId = it.id
-            questionReviewStore[question.reviewNotificationId] = question
+        reviewChannel.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
+            questionReviewStore[it.id] = question
 
             it.addReaction("\u2705").queue()
             it.addReaction("\u274C").queue()
         }
     }
 
-    fun processReviewEvent(event: GuildMessageReactionAddEvent, approved: Boolean) {
-        val question = questionReviewStore.getOrElse(event.messageId) {
-            return
-        }
+    fun processReviewEvent(channel: TextChannel, messageId: String, approved: Boolean) {
+        val question = questionReviewStore[messageId] ?: return
 
-        if (question.reviewed) return
-
-        question.reviewed = true
-        questionReviewStore[event.messageId] = question
+        if (question in questionQueue) return
 
         if (approved)
-            questionQueue.enqueue(question)
+            questionQueue.add(question)
 
-        val message = event.channel.retrieveMessageById(event.messageId).complete()
-
-        event.channel.editMessageById(message.id, message.embeds.first().toEmbedBuilder()
+        channel.retrieveMessageById(messageId).queue {
+            channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()
                 .setColor(if (approved) Color.GREEN else Color.RED).build()).queue()
-    }
-}
-
-sealed class InterviewCreationResult {
-    data class Success(val interview: Interview) : InterviewCreationResult() {
-        companion object
-    }
-
-    data class Error(val message: String) : InterviewCreationResult() {
-        companion object
+        }
     }
 }

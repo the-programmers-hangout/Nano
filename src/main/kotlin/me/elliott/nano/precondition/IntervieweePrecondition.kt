@@ -8,10 +8,13 @@ import me.elliott.nano.util.Constants
 @Precondition
 fun isIntervieweePrecondition(interviewService: InterviewService) = exit@{ event: CommandEvent ->
     val command = event.container.commands[event.commandStruct.commandName] ?: return@exit Pass
-    if (command.category != Constants.INTERVIEWEE) return@exit Pass
+    if (command.category != Constants.INTERVIEWEE_CATEGORY) return@exit Pass
 
-    if (!interviewService.interviewRunning()) return@exit Fail("Interview is not running.")
-    if (event.author.id == interviewService.interview!!.intervieweeId) return@exit Pass
+    val interview = interviewService.retrieveInterview()
+        ?: return@exit Fail("Interview is not running.")
 
-    return@exit Fail("You are not being interviewed.")
+    if (!interview.isBeingInterviewed(event.author))
+        return@exit Fail("You are not being interviewed.")
+
+    return@exit Pass
 }

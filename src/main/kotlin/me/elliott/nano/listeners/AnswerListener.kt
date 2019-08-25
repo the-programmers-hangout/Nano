@@ -1,50 +1,45 @@
 package me.elliott.nano.listeners
 
 import com.google.common.eventbus.Subscribe
-import me.aberrantfox.kjdautils.internal.command.tryRetrieveSnowflake
 import me.elliott.nano.data.Configuration
-import me.elliott.nano.services.InterviewService
-import me.elliott.nano.util.EmbedUtils
-import net.dv8tion.jda.api.entities.TextChannel
+import me.elliott.nano.services.*
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent
 import net.dv8tion.jda.api.events.user.UserTypingEvent
 
-class AnswerListener(private val interviewService: InterviewService, private val configuration: Configuration) {
+var wasEmbedSent = false
+
+class AnswerListener(private val configuration: Configuration, private val interviewService: InterviewService, private val embedService: EmbedService) {
 
     @Subscribe
     fun onPrivateMessageReceivedEvent(event: PrivateMessageReceivedEvent) {
+        val author = event.author
+        val messageText = event.message.contentRaw
+        val interview = interviewService.retrieveInterview() ?: return
 
-        if (event.author.isBot) return
-        if (!interviewService.interviewRunning()) return
+        if (author.isBot) return
+        if (!interview.isBeingInterviewed(author)) return
+        if (messageText.startsWith(configuration.prefix)) return
 
-        val interview = interviewService.interview!!
+        val question = interviewService.getCurrentQuestion() ?: return
+        val answerChannel = event.jda.getTextChannelById(interview.answerChannel) ?: return
 
-        if (event.author.id != interviewService.interview!!.intervieweeId ||
-                event.message.contentRaw.startsWith(configuration.prefix)) return
-
-        val question = interviewService.currentQuestion ?: return
-        val answerChannel = event.jda.getTextChannelById(interview.answerChannel)!!
-
-        if (!question.sentToAnswerChannel)
-            answerChannel.sendMessage(EmbedUtils.buildResponseEmbed(event.author, question)).complete().also {
-                question.sentToAnswerChannel = true
+        if (wasEmbedSent) {
+            answerChannel.sendMessage(embedService.buildResponseEmbed(author, question)).queue {
+                wasEmbedSent = true
                 it.addReaction("⭐").queue()
             }
-        answerChannel.sendMessage("**${event.author.name}:** ${event.message.contentRaw}").queue()
+        }
+
+        answerChannel.sendMessage("**${author.name}:** $messageText").queue()
     }
 
     @Subscribe
     fun onUserTypingEvent(event: UserTypingEvent) {
         if (event.user.isBot) return
-        if (!interviewService.interviewRunning()) return
-
-        val interview = interviewService.interview!!
+        val interview = interviewService.retrieveInterview() ?: return
         if (!interview.sendTyping) return
-        if (interview.intervieweeId != event.user.id) return
-
-        val interviewChannel = tryRetrieveSnowflake(event.jda) {
-            it.getTextChannelById(interview.answerChannel)
-        } as TextChannel
+        if (!interview.isBeingInterviewed(event.user)) return
+        val interviewChannel = event.jda.getTextChannelById(interview.answerChannel) ?: return
 
         interviewChannel.sendTyping().queue()
     }
