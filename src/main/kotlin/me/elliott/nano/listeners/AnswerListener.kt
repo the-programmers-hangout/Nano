@@ -13,8 +13,7 @@ class AnswerListener(private val configuration: Configuration, private val inter
         if (event.author.isBot) return
         val interview = interviewService.retrieveInterview() ?: return
 
-        if (event.author.id != interview.intervieweeId ||
-                event.message.contentRaw.startsWith(configuration.prefix)) return
+        if (!interview.isBeingInterviewed(event.author) || event.message.contentRaw.startsWith(configuration.prefix)) return
 
         val question = interviewService.getCurrentQuestion() ?: return
         val answerChannel = event.jda.getTextChannelById(interview.answerChannel)!!
@@ -24,6 +23,7 @@ class AnswerListener(private val configuration: Configuration, private val inter
                 question.sentToAnswerChannel = true
                 it.addReaction("⭐").queue()
             }
+
         answerChannel.sendMessage("**${event.author.name}:** ${event.message.contentRaw}").queue()
     }
 
@@ -32,7 +32,7 @@ class AnswerListener(private val configuration: Configuration, private val inter
         if (event.user.isBot) return
         val interview = interviewService.retrieveInterview() ?: return
         if (!interview.sendTyping) return
-        if (interview.intervieweeId != event.user.id) return
+        if (!interview.isBeingInterviewed(event.user)) return
         val interviewChannel = event.jda.getTextChannelById(interview.answerChannel) ?: return
 
         interviewChannel.sendTyping().queue()

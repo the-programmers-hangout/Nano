@@ -18,6 +18,5 @@ data class Configuration(
     val generateDocsAtRuntime: Boolean = false,
     var guildConfigurations: MutableList<GuildConfiguration> = mutableListOf(GuildConfiguration())
 ) {
-    fun hasGuildConfig(guildId: String) = getGuildConfig(guildId) != null
     fun getGuildConfig(guildId: String) = guildConfigurations.firstOrNull { it.guildId == guildId }
 }

@@ -18,7 +18,7 @@ class QuestionListener(private val configuration: Configuration, private val int
 
         val guildConfiguration = configuration.getGuildConfig(guild.id)!!
 
-        if (!interviewService.hasInterview() || channel.id != guildConfiguration.participantChannelId) return
+        if (!interviewService.interviewInProgress() || channel.id != guildConfiguration.participantChannelId) return
 
         if (messageText.startsWith(guildConfiguration.questionPrefix)) {
             val prefix = guildConfiguration.questionPrefix

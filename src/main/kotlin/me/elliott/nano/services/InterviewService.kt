@@ -11,11 +11,13 @@ import java.awt.Color
 import java.util.concurrent.SynchronousQueue
 
 data class Interview(
-        var intervieweeId: String,
+        private var intervieweeId: String,
         var answerChannel: String,
         var bio: String = "*Please set a bio.*",
         var sendTyping: Boolean = true
-)
+) {
+    fun isBeingInterviewed(user: User) = user.id == intervieweeId
+}
 
 data class Question(
     val authorId: String,
@@ -36,15 +38,14 @@ class InterviewService(private val configuration: Configuration,
     private var interview: Interview? = null
 
     fun retrieveInterview() = interview
-    fun hasInterview() = interview != null
-
+    fun interviewInProgress() = interview != null
     fun getCurrentQuestion(): Question? = questionQueue.poll()
 
     private fun createAnswerChannel(interviewee: User, guild: Guild) =
             guild.getCategoryById(configuration.getGuildConfig(guild.id)!!.categoryId)!!
                     .createTextChannel(interviewee.name).complete().id
 
-    fun createInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
+    fun startInterview(guild: Guild, interviewee: User, bio: String): InterviewCreationResult {
         var interviewCreationResult: InterviewCreationResult = InterviewCreationResult.Success(Interview(interviewee.id,
                 createAnswerChannel(interviewee, guild), bio))
 
@@ -78,9 +79,9 @@ class InterviewService(private val configuration: Configuration,
 
     fun queueQuestionForReview(question: Question, guild: Guild) {
         val reviewChannel = discord.jda.getTextChannelById(configuration
-                .getGuildConfig(guild.id)!!.reviewChannelId)
+                .getGuildConfig(guild.id)!!.reviewChannelId) ?: return
 
-        reviewChannel!!.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
+        reviewChannel.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
             question.reviewNotificationId = it.id
             questionReviewStore[question.reviewNotificationId] = question
 
@@ -90,9 +91,7 @@ class InterviewService(private val configuration: Configuration,
     }
 
     fun processReviewEvent(channel: TextChannel, messageId: String, approved: Boolean) {
-        val question = questionReviewStore.getOrElse(messageId) {
-            return
-        }
+        val question = questionReviewStore[messageId] ?: return
 
         if (question.reviewed) return
 

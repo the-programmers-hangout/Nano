@@ -13,7 +13,7 @@ fun isIntervieweePrecondition(interviewService: InterviewService) = exit@{ event
     val interview = interviewService.retrieveInterview()
         ?: return@exit Fail("Interview is not running.")
 
-    if (event.author.id != interview.intervieweeId)
+    if (!interview.isBeingInterviewed(event.author))
         return@exit Fail("You are not being interviewed.")
 
     return@exit Pass

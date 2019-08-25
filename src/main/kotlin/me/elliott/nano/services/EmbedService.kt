@@ -58,13 +58,6 @@ class EmbedService(private val discord: Discord) {
                 }
             }.toEmbedBuilder().setAuthor(interviewee.name).build()
 
-        fun buildNotCompleteEmbed() =
-            embed {
-                title = "Error"
-                color = Color.RED
-                description = "**Please add an interviewee and answer channel to start an AMA."
-            }
-
         fun buildInterviewInstructionEmbed(prefix: String, botAvatarUrl: String) =
             embed {
                 thumbnail = botAvatarUrl

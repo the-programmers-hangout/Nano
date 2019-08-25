@@ -18,7 +18,7 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
             val user = it.args.component1() as User
             val bio = it.args.component2() as String
 
-            when (val result = interviewService.createInterview(it.guild!!, user, bio)) {
+            when (val result = interviewService.startInterview(it.guild!!, user, bio)) {
                 is InterviewCreationResult.Error -> {
                     it.respond(result.message)
                 }
