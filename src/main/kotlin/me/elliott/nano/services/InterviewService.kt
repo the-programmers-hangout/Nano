@@ -4,6 +4,7 @@ import me.aberrantfox.kjdautils.api.annotation.Service
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
+import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.*
 import java.awt.Color
 import java.util.ArrayDeque
@@ -27,14 +28,24 @@ class InterviewService(private val configuration: Configuration,
     private var questionQueue = ArrayDeque<Question>()
     private var interview: Interview? = null
     private var currentQuestion: Question? = null
+    private var answerMessageMap = mutableMapOf<String, String>()
 
     fun retrieveInterview() = interview
     fun interviewInProgress() = interview != null
     fun getCurrentQuestion(): Question? = currentQuestion
+    fun addAnswerToMap(privateMessageId: String, answerChannelMessageId: String) {
+        answerMessageMap[privateMessageId] = answerChannelMessageId
+    }
 
     fun getNextQuestion(): Question? {
         currentQuestion = questionQueue.poll()
         return currentQuestion
+    }
+
+    fun editAnswerChannelMessage(privateMessageId: String, updatedText: String, jda: JDA) {
+        val answerChannel = jda.getTextChannelById(interview!!.answerChannel) ?: return
+        val answerChannelMessageId = answerMessageMap.getOrElse(privateMessageId, { return })
+        answerChannel.editMessageById(answerChannelMessageId, updatedText).queue()
     }
 
     fun startInterview(guild: Guild, interviewee: User, bio: String): String {
@@ -47,6 +58,8 @@ class InterviewService(private val configuration: Configuration,
 
         val participantChannel = jda.getTextChannelById(configuration.participantChannelId)
                 ?: return Constants.MISSING_PARTICIPANT_CONFIG
+
+        answerMessageMap.clear()
 
         participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
                 configuration.questionPrefix)).queue {
@@ -63,6 +76,8 @@ class InterviewService(private val configuration: Configuration,
         privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix, avatar)).queue()
 
         interview = Interview(interviewee.id, answerChannel)
+        loggingService.interviewStarted(guild, interviewee)
+
         return "**Success:** ${interviewee.name}'s interview has started!"
     }
 
@@ -75,8 +90,10 @@ class InterviewService(private val configuration: Configuration,
         return true
     }
 
-    fun queueQuestionForReview(question: Question, guild: Guild) {
+    fun queueQuestionForReview(question: Question, guild: Guild, author: User) {
         val reviewChannel = guild.getTextChannelById(configuration.reviewChannelId) ?: return
+
+        loggingService.submittedQuestion(guild, author)
 
         reviewChannel.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
             questionReviewStore[it.id] = question
@@ -86,13 +103,18 @@ class InterviewService(private val configuration: Configuration,
         }
     }
 
-    fun processReviewEvent(channel: TextChannel, messageId: String, approved: Boolean) {
+    fun processReviewEvent(channel: TextChannel, moderator: User, messageId: String, approved: Boolean) {
         val question = questionReviewStore[messageId] ?: return
 
         if (question in questionQueue) return
 
-        if (approved)
+        val author = channel.jda.getUserById(question.authorId) ?: return
+
+        if (approved) {
+            loggingService.questionApproved(channel.guild, moderator, author)
             questionQueue.offer(question)
+        } else
+            loggingService.questionDenied(channel.guild, moderator, author)
 
         channel.retrieveMessageById(messageId).queue {
             channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()

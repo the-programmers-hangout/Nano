@@ -22,7 +22,8 @@ class QuestionListener(private val configuration: Configuration, private val int
 
         if (messageText.startsWith(questionPrefix) && messageText.removePrefix(questionPrefix).isNotBlank()) {
 
-            interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(questionPrefix)), guild)
+            interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(questionPrefix)),
+                    guild, author)
 
             channel.sendMessage(EmbedService.buildQuestionSubmittedEmbed(author)).queue()
         }
