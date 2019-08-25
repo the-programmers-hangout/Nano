@@ -26,7 +26,7 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
     }
 
     command("StopInterview") {
-        description = "Stop a currently running interview ."
+        description = "Stop a currently running interview."
         execute {
             val wasStopped = interviewService.stopInterview()
 
