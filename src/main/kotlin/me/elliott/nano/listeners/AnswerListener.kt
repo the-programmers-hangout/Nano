@@ -6,7 +6,7 @@ import me.elliott.nano.services.*
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent
 import net.dv8tion.jda.api.events.user.UserTypingEvent
 
-var wasEmbedSent = false
+var embedSent = false
 
 class AnswerListener(private val configuration: Configuration, private val interviewService: InterviewService, private val embedService: EmbedService) {
 
@@ -23,9 +23,9 @@ class AnswerListener(private val configuration: Configuration, private val inter
         val question = interviewService.getCurrentQuestion() ?: return
         val answerChannel = event.jda.getTextChannelById(interview.answerChannel) ?: return
 
-        if (wasEmbedSent) {
+        if (!embedSent) {
             answerChannel.sendMessage(embedService.buildResponseEmbed(author, question)).queue {
-                wasEmbedSent = true
+                embedSent = true
                 it.addReaction("⭐").queue()
             }
         }

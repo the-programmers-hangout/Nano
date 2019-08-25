@@ -26,35 +26,37 @@ class InterviewService(private val configuration: Configuration,
     private var questionReviewStore = mutableMapOf<String, Question>()
     private var questionQueue = ArrayDeque<Question>()
     private var interview: Interview? = null
+    private var currentQuestion: Question? = null
 
     fun retrieveInterview() = interview
     fun interviewInProgress() = interview != null
-    fun getCurrentQuestion(): Question? = questionQueue.peek()
-    fun getNextQuestion(): Question? = if (questionQueue.isEmpty()) null else questionQueue.removeFirst()
+    fun getCurrentQuestion(): Question? = currentQuestion
+
+    fun getNextQuestion(): Question? {
+        currentQuestion = questionQueue.poll()
+        return currentQuestion
+    }
 
     fun startInterview(guild: Guild, interviewee: User, bio: String): String {
         val jda = guild.jda
 
-        val guildConfiguration = configuration.getGuildConfig(guild.id)
-            ?: return Constants.MISSING_GUILD_CONFIG
-
-        val botCategory = guild.getCategoryById(guildConfiguration.categoryId)
-            ?: return Constants.MISSING_CATEGORY_CONFIG
+        val botCategory = guild.getCategoryById(configuration.categoryId)
+                ?: return Constants.MISSING_CATEGORY_CONFIG
 
         val answerChannel = botCategory.createTextChannel(interviewee.name).complete().id
 
-        val participantChannel = jda.getTextChannelById(guildConfiguration.participantChannelId)
-            ?: return Constants.MISSING_PARTICIPANT_CONFIG
+        val participantChannel = jda.getTextChannelById(configuration.participantChannelId)
+                ?: return Constants.MISSING_PARTICIPANT_CONFIG
 
         participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
-            guildConfiguration.questionPrefix)).queue {
+                configuration.questionPrefix)).queue {
             it.channel.pinMessageById(it.id).queue()
         }
 
         val privateChannel = interviewee.openPrivateChannel().complete()
-            ?: return Constants.DM_CLOSED_ERROR.also {
-                loggingService.directMessagesClosedError(guild, interviewee)
-            }
+                ?: return Constants.DM_CLOSED_ERROR.also {
+                    loggingService.directMessagesClosedError(guild, interviewee)
+                }
 
         val avatar = jda.selfUser.effectiveAvatarUrl
 
@@ -74,8 +76,7 @@ class InterviewService(private val configuration: Configuration,
     }
 
     fun queueQuestionForReview(question: Question, guild: Guild) {
-        val guildConfiguration = configuration.getGuildConfig(guild.id) ?: return
-        val reviewChannel = guild.getTextChannelById(guildConfiguration.reviewChannelId) ?: return
+        val reviewChannel = guild.getTextChannelById(configuration.reviewChannelId) ?: return
 
         reviewChannel.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
             questionReviewStore[it.id] = question
@@ -91,11 +92,11 @@ class InterviewService(private val configuration: Configuration,
         if (question in questionQueue) return
 
         if (approved)
-            questionQueue.add(question)
+            questionQueue.offer(question)
 
         channel.retrieveMessageById(messageId).queue {
             channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()
-                .setColor(if (approved) Color.GREEN else Color.RED).build()).queue()
+                    .setColor(if (approved) Color.GREEN else Color.RED).build()).queue()
         }
     }
 }

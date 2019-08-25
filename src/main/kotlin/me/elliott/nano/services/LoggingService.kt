@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
 
 @Service
-class LoggingService(private val config: Configuration) {
+class LoggingService(private val configuration: Configuration) {
 
     private fun withLog(guild: Guild, f: () -> String) =
             getLogConfig(guild.id).apply {
@@ -33,7 +33,7 @@ class LoggingService(private val config: Configuration) {
         "**Info ::** ${user.asMention} denied ${submitter.asMention}'s question."
     }
 
-    private fun getLogConfig(guildId: String) = config.getGuildConfig(guildId)!!.loggingChannel
+    private fun getLogConfig(guildId: String) = configuration.loggingChannel
     private fun log(guild: Guild, logChannelId: String, message: String) =
             logChannelId.takeIf { it.isNotEmpty() }?.idToTextChannel(guild)?.sendMessage(message)?.queue()
 

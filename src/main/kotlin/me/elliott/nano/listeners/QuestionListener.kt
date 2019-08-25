@@ -17,11 +17,10 @@ class QuestionListener(private val configuration: Configuration, private val int
         if (!interviewService.interviewInProgress()) return
         if (author.isBot) return
 
-        val guildConfiguration = configuration.getGuildConfig(guild.id) ?: return
-        if (channel.id != guildConfiguration.participantChannelId) return
+        if (channel.id != configuration.participantChannelId) return
 
-        if (messageText.startsWith(guildConfiguration.questionPrefix)) {
-            val prefix = guildConfiguration.questionPrefix
+        if (messageText.startsWith(configuration.questionPrefix)) {
+            val prefix = configuration.questionPrefix
             interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(prefix)), guild)
 
             channel.sendMessage(EmbedService.buildQuestionSubmittedEmbed(author)).queue()

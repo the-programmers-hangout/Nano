@@ -15,8 +15,7 @@ fun produceIsStaffMemberPrecondition(configuration: Configuration) = exit@{ even
     if (event.channel !is TextChannel) return@exit Fail("**Failure:** This command must be executed in a text channel.")
 
     val guild = event.guild!!
-    val guildConfig = configuration.getGuildConfig(guild.id) ?: return@exit Pass
-    val staffRole = guild.getRolesByName(guildConfig.staffRoleName, true).firstOrNull() ?: return@exit Fail()
+    val staffRole = guild.getRolesByName(configuration.staffRoleName, true).firstOrNull() ?: return@exit Fail()
 
     if (staffRole !in event.message.member!!.roles)
         return@exit Fail("Missing clearance to use this command.")
