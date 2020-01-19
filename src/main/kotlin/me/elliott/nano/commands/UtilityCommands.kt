@@ -1,7 +1,6 @@
 package me.elliott.nano.commands
 
-import me.aberrantfox.kjdautils.api.dsl.CommandSet
-import me.aberrantfox.kjdautils.api.dsl.commands
+import me.aberrantfox.kjdautils.api.dsl.command.*
 
 @CommandSet("Interview")
 fun utilityCommands() = commands {

@@ -8,17 +8,17 @@ import me.elliott.nano.util.Constants
 import net.dv8tion.jda.api.entities.TextChannel
 
 @Precondition
-fun produceIsStaffMemberPrecondition(configuration: Configuration) = exit@{ event: CommandEvent ->
-    val command = event.container.commands[event.commandStruct.commandName] ?: return@exit Pass
+fun produceIsStaffMemberPrecondition(configuration: Configuration) = precondition {
+    val command = it.container[it.commandStruct.commandName] ?: return@precondition Pass
 
-    if (command.category == Constants.INTERVIEWEE_CATEGORY) return@exit Pass
-    if (event.channel !is TextChannel) return@exit Fail("**Failure:** This command must be executed in a text channel.")
+    if (command.category == Constants.INTERVIEWEE_CATEGORY) return@precondition Pass
+    if (it.channel !is TextChannel) return@precondition Fail("**Failure:** This command must be executed in a text channel.")
 
-    val guild = event.guild!!
-    val staffRole = guild.getRolesByName(configuration.staffRoleName, true).firstOrNull() ?: return@exit Fail()
+    val guild = it.guild!!
+    val staffRole = guild.getRolesByName(configuration.staffRoleName, true).firstOrNull() ?: return@precondition Fail()
 
-    if (staffRole !in event.message.member!!.roles)
-        return@exit Fail("Missing clearance to use this command.")
+    if (staffRole !in it.message.member!!.roles)
+        return@precondition Fail("Missing clearance to use this command.")
 
-    return@exit Pass
+    return@precondition Pass
 }

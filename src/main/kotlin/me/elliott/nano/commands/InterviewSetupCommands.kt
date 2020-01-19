@@ -1,20 +1,16 @@
 package me.elliott.nano.commands
 
-import me.aberrantfox.kjdautils.api.dsl.CommandSet
-import me.aberrantfox.kjdautils.api.dsl.commands
+import me.aberrantfox.kjdautils.api.dsl.command.*
 import me.aberrantfox.kjdautils.internal.arguments.*
 import me.elliott.nano.services.InterviewService
-import net.dv8tion.jda.api.entities.User
 
 @CommandSet("Interview")
 fun interviewSetupCommands(interviewService: InterviewService) = commands {
     command("StartInterview") {
         requiresGuild = true
         description = "Set the user to be interviewed."
-        expect(UserArg("Interviewee"), SentenceArg("Bio"))
-        execute {
-            val user = it.args.component1() as User
-            val bio = it.args.component2() as String
+        execute(UserArg("Interviewee"), SentenceArg("Bio")) {
+            val (user, bio) = it.args
 
             if (interviewService.interviewInProgress())
                 return@execute it.respond("There is already an interview in progress.")
