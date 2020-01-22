@@ -3,6 +3,7 @@ package me.elliott.nano.commands
 import me.aberrantfox.kjdautils.api.dsl.CommandSet
 import me.aberrantfox.kjdautils.api.dsl.commands
 import me.aberrantfox.kjdautils.extensions.jda.sendPrivateMessage
+import me.aberrantfox.kjdautils.internal.arguments.IntegerArg
 import me.aberrantfox.kjdautils.internal.arguments.OnOffArg
 import me.elliott.nano.listeners.embedSent
 import me.elliott.nano.services.*
@@ -15,10 +16,30 @@ fun interviewCommands(interviewService: InterviewService, embedService: EmbedSer
         description = "Pulls the next question off the top of the queue."
         execute {
             val question = interviewService.getNextQuestion()
-                ?: return@execute it.respond("There are no questions currently in the queue.")
+                    ?: return@execute it.respond("There are no questions currently in the queue.")
 
             embedSent = false
             it.author.sendPrivateMessage(embedService.buildQuestionEmbed(question))
+        }
+    }
+
+    command("Peek") {
+        requiresGuild = false
+        description = "Looks at the next five questions in the queue."
+        execute {
+            if (interviewService.getQuestionCount() > 0)
+                it.author.sendPrivateMessage(embedService.buildPeekAheadEmbed(interviewService.peekTopFive()))
+            else
+                it.author.sendPrivateMessage("There are no questions in the queue.")
+        }
+    }
+
+    command("makeNext") {
+        expect(IntegerArg)
+        requiresGuild = false
+        description = "Takes the provided question ID and makes that the next question."
+        execute {
+            it.author.sendPrivateMessage(interviewService.swapQuestion(it.args.component1() as Int))
         }
     }
 

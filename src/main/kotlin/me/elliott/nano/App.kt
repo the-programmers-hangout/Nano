@@ -7,18 +7,18 @@ import me.elliott.nano.data.Configuration
 
 fun main(args: Array<String>) {
     val token = args.firstOrNull()
-        ?: throw IllegalArgumentException("No program arguments provided. Expected bot token.")
+            ?: throw IllegalArgumentException("No program arguments provided. Expected bot token.")
 
     startBot(token) {
         configure {
             globalPath = "me.elliott.nano"
         }
     }
-}
 
-@Service
-class PrefixService(configuration: Configuration, discord: Discord) {
-    init {
-        discord.configuration.prefix = configuration.prefix
+    @Service
+    class PrefixService(configuration: Configuration, discord: Discord) {
+        init {
+            discord.configuration.prefix = configuration.prefix
+        }
     }
 }

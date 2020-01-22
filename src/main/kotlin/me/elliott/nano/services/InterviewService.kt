@@ -4,6 +4,7 @@ import me.aberrantfox.kjdautils.api.annotation.Service
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
+import me.elliott.nano.util.notNull
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.*
 import java.awt.Color
@@ -30,11 +31,26 @@ class InterviewService(private val configuration: Configuration,
     private var currentQuestion: Question? = null
     private var answerMessageMap = mutableMapOf<String, String>()
 
+
     fun retrieveInterview() = interview
     fun interviewInProgress() = interview != null
     fun getCurrentQuestion(): Question? = currentQuestion
+    fun getQuestionCount() = questionQueue.size
+    fun peekTopFive(): List<Question> = questionQueue.toList().take(5)
+
     fun addAnswerToMap(privateMessageId: String, answerChannelMessageId: String) {
         answerMessageMap[privateMessageId] = answerChannelMessageId
+    }
+
+    fun swapQuestion(questionIndex: Int): String {
+        var message = "Please provide a valid question ID."
+
+        questionQueue.elementAtOrNull(questionIndex).notNull {
+            questionQueue.remove(it)
+            questionQueue.addFirst(it)
+            message = "Done."
+        }
+        return message
     }
 
     fun getNextQuestion(): Question? {

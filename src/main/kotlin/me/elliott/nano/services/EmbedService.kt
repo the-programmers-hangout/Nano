@@ -33,13 +33,26 @@ class EmbedService(private val discord: Discord) {
 
     fun buildResponseEmbed(interviewee: User, question: Question): MessageEmbed {
         val author = retrieveUserById(question.authorId)
-        val authorName = author?.name ?: "Unknown user"
+        val authorName = author?.name ?: "Unknown User"
 
         return embed {
             title = "${interviewee.name} is answering $authorName's Question:"
             color = Color.MAGENTA
             description = "**Question:** ${question.questionText}"
         }.toEmbedBuilder().setFooter("Asked by $authorName", author?.effectiveAvatarUrl).build()
+    }
+
+    fun buildPeekAheadEmbed(questions: List<Question>): MessageEmbed {
+        return embed {
+            title = "Up Next"
+            color = Color.PINK
+
+            questions.forEachIndexed { index, question ->
+                val author = retrieveUserById(question.authorId)
+                val authorName = author?.name ?: "Unknown user"
+                addField("(ID: **$index**) - ${authorName}'s Question:", question.questionText)
+            }
+        }.toEmbedBuilder().build()
     }
 
     companion object {
