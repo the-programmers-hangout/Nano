@@ -16,6 +16,7 @@
 ## Interviewee
 | Commands   | Arguments | Description                                                      |
 | ---------- | --------- | ---------------------------------------------------------------- |
+| Count      | <none>    | Reports how many questions are pending reply.                    |
 | Next       | <none>    | Pulls the next question off the top of the queue.                |
 | Peek       | <none>    | Looks at the next five questions in the queue.                   |
 | SendTyping | On or Off | Enables or disables sending typing events to the answer channel. |

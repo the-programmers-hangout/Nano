@@ -4,6 +4,7 @@ import me.aberrantfox.kjdautils.api.annotation.Service
 import me.aberrantfox.kjdautils.api.startBot
 import me.aberrantfox.kjdautils.discord.Discord
 import me.elliott.nano.data.Configuration
+import me.elliott.nano.services.InterviewService
 
 fun main(args: Array<String>) {
     val token = args.firstOrNull()
@@ -20,6 +21,8 @@ fun main(args: Array<String>) {
     class PrefixService(configuration: Configuration, discord: Discord) {
         init {
             discord.configuration.prefix = configuration.prefix
+
+
         }
     }
 }

@@ -53,4 +53,14 @@ fun interviewCommands(interviewService: InterviewService, embedService: EmbedSer
             it.respond("Sending of typing events is now **$response**")
         }
     }
+
+    command("Count") {
+        requiresGuild = false
+        description = "Reports how many questions are pending reply."
+        execute {
+            if (it.author.isBot) return@execute
+            val count = interviewService.getQuestionCount()
+            return@execute it.respond("There are ${if (count == 0) "no" else count} questions in the queue")
+        }
+    }
 }
