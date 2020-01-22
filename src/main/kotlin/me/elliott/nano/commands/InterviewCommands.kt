@@ -1,10 +1,9 @@
 package me.elliott.nano.commands
 
-import me.aberrantfox.kjdautils.api.dsl.CommandSet
-import me.aberrantfox.kjdautils.api.dsl.commands
+import me.aberrantfox.kjdautils.api.dsl.command.*
 import me.aberrantfox.kjdautils.extensions.jda.sendPrivateMessage
 import me.aberrantfox.kjdautils.internal.arguments.IntegerArg
-import me.aberrantfox.kjdautils.internal.arguments.OnOffArg
+import me.aberrantfox.kjdautils.internal.arguments.*
 import me.elliott.nano.listeners.embedSent
 import me.elliott.nano.services.*
 import me.elliott.nano.util.Constants.Companion.INTERVIEWEE_CATEGORY
@@ -35,10 +34,9 @@ fun interviewCommands(interviewService: InterviewService, embedService: EmbedSer
     }
 
     command("makeNext") {
-        expect(IntegerArg)
         requiresGuild = false
         description = "Takes the provided question ID and makes that the next question."
-        execute {
+        execute(IntegerArg) {
             it.author.sendPrivateMessage(interviewService.swapQuestion(it.args.component1() as Int))
         }
     }
@@ -46,9 +44,8 @@ fun interviewCommands(interviewService: InterviewService, embedService: EmbedSer
     command("SendTyping") {
         requiresGuild = false
         description = "Enables or disables sending typing events to the answer channel."
-        expect(OnOffArg)
-        execute {
-            val isOn = it.args.component1() as Boolean
+        execute(BooleanArg("On or Off", "On", "Off")) {
+            val isOn = it.args.first
             val response = if (isOn) "enabled" else "disabled"
             val interview = interviewService.retrieveInterview() ?: return@execute
 

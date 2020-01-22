@@ -12,6 +12,7 @@ fun main(args: Array<String>) {
     startBot(token) {
         configure {
             globalPath = "me.elliott.nano"
+            allowPrivateMessages = true
         }
     }
 

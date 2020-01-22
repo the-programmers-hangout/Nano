@@ -21,8 +21,8 @@
 | SendTyping | On or Off | Enables or disables sending typing events to the answer channel. |
 | makeNext   | Integer   | Takes the provided question ID and makes that the next question. |
 
-## utility
-| Commands | Arguments | Description         |
-| -------- | --------- | ------------------- |
-| help     | (Word)    | Display a help menu |
+## Utility
+| Commands | Arguments | Description          |
+| -------- | --------- | -------------------- |
+| Help     | (Command) | Display a help menu. |
 
