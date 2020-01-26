@@ -63,4 +63,20 @@ fun interviewCommands(interviewService: InterviewService, embedService: EmbedSer
             return@execute it.respond("There are ${if (count == 0) "no" else count} questions in the queue")
         }
     }
+
+    command("Later") {
+        requiresGuild = false
+        description = "Returns current question to the back of the queue."
+        execute {
+            if (it.author.isBot) return@execute
+            val currentQuestion = interviewService.getCurrentQuestion()
+                    ?: return@execute it.respond("There is no active question")
+            if (interviewService.isQueueEmpty())
+                return@execute it.respond("There are no more questions in the queue")
+
+            interviewService.pushQuestionBack(currentQuestion)
+            val nextQuestion = interviewService.getNextQuestion()
+            it.author.sendPrivateMessage(embedService.buildQuestionEmbed(nextQuestion!!))
+        }
+    }
 }

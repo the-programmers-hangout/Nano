@@ -37,6 +37,7 @@ class InterviewService(private val configuration: Configuration,
     fun getCurrentQuestion(): Question? = currentQuestion
     fun getQuestionCount() = questionQueue.size
     fun peekTopFive(): List<Question> = questionQueue.toList().take(5)
+    fun isQueueEmpty() = questionQueue.isEmpty()
 
     fun addAnswerToMap(privateMessageId: String, answerChannelMessageId: String) {
         answerMessageMap[privateMessageId] = answerChannelMessageId
@@ -51,6 +52,10 @@ class InterviewService(private val configuration: Configuration,
             message = "Done."
         }
         return message
+    }
+
+    fun pushQuestionBack(question: Question) {
+        questionQueue.addLast(question)
     }
 
     fun getNextQuestion(): Question? {
