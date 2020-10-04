@@ -1,31 +1,37 @@
 package me.elliott.nano.listeners
 
-import com.google.common.eventbus.Subscribe
+import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import com.gitlab.kordlib.core.entity.channel.TextChannel
+import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.services.*
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
+import me.jakejmattson.discordkt.api.Discord
+import me.jakejmattson.discordkt.api.dsl.listeners
+import java.awt.Color
 
-class QuestionListener(private val configuration: Configuration, private val interviewService: InterviewService) {
 
-    @Subscribe
-    fun onGuildMessageReceivedEvent(event: GuildMessageReceivedEvent) {
-        val author = event.author
-        val guild = event.guild
-        val channel = event.channel
-        val messageText = event.message.contentRaw
+fun onGuildMessageReceivedEvent(interviewService: InterviewService, discord: Discord, configuration: Configuration) = listeners {
+    on<MessageCreateEvent> {
+        val author = message.author!!
+        val guild = getGuild() ?: return@on
+        val channel = discord.api.getChannelOf<TextChannel>(message.id) ?: return@on
+        val messageText = message.content
 
-        if (!interviewService.interviewInProgress()) return
-        if (author.isBot) return
+        if (!interviewService.interviewInProgress()) return@on
+        if (author.isBot!!) return@on
 
-        if (channel.id != configuration.participantChannelId) return
+        if (channel.id.value != configuration.participantChannelId) return@on
         val questionPrefix = configuration.questionPrefix
 
         if (messageText.startsWith(questionPrefix) && messageText.removePrefix(questionPrefix).isNotBlank()) {
+            interviewService.queueQuestionForReview(Question(author.id.value, messageText.removePrefix(questionPrefix)), guild, author)
 
-            interviewService.queueQuestionForReview(Question(author.id, messageText.removePrefix(questionPrefix)),
-                    guild, author)
-
-            channel.sendMessage(EmbedService.buildQuestionSubmittedEmbed(author)).queue()
+            channel.createEmbed {
+                title = "Question Submitted"
+                color = Color.PINK
+                description = "**${author.username}**'s question was successfully submitted for review."
+            }
         }
+
     }
 }

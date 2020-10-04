@@ -1,23 +1,23 @@
 package me.elliott.nano.commands
 
-import me.aberrantfox.kjdautils.api.dsl.command.*
-import me.aberrantfox.kjdautils.internal.arguments.*
 import me.elliott.nano.services.InterviewService
+import me.jakejmattson.discordkt.api.arguments.EveryArg
+import me.jakejmattson.discordkt.api.arguments.UserArg
+import me.jakejmattson.discordkt.api.dsl.commands
 
-@CommandSet("Interview")
-fun interviewSetupCommands(interviewService: InterviewService) = commands {
+fun interviewSetupCommands(interviewService: InterviewService) = commands("Interview") {
     command("StartInterview") {
         requiresGuild = true
         description = "Set the user to be interviewed."
-        execute(UserArg("Interviewee"), SentenceArg("Bio")) {
-            val (user, bio) = it.args
+        execute(UserArg("Interviewee"), EveryArg("Bio")) {
+            val (user, bio) = args
 
             if (interviewService.interviewInProgress())
-                return@execute it.respond("There is already an interview in progress.")
+                return@execute respond("There is already an interview in progress.")
 
-            val response = interviewService.startInterview(it.guild!!, user, bio)
+            val response = interviewService.startInterview(guild!!, user, bio)
 
-            it.respond(response)
+            respond(response)
         }
     }
 
@@ -32,7 +32,7 @@ fun interviewSetupCommands(interviewService: InterviewService) = commands {
                 else
                     "**Failure:** Interview is not running!"
 
-            it.respond(response)
+            respond(response)
         }
     }
 }

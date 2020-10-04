@@ -1,12 +1,21 @@
 package me.elliott.nano.services
 
-import me.aberrantfox.kjdautils.api.annotation.Service
+import com.gitlab.kordlib.common.entity.Snowflake
+import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import com.gitlab.kordlib.core.behavior.createTextChannel
+import com.gitlab.kordlib.core.behavior.edit
+import com.gitlab.kordlib.core.behavior.getChannelOf
+import com.gitlab.kordlib.core.entity.Guild
+import com.gitlab.kordlib.core.entity.User
+import com.gitlab.kordlib.core.entity.channel.Category
+import com.gitlab.kordlib.core.entity.channel.TextChannel
+import com.gitlab.kordlib.kordx.emoji.Emojis
+import com.gitlab.kordlib.kordx.emoji.toReaction
 import me.elliott.nano.data.Configuration
-import me.elliott.nano.extensions.toEmbedBuilder
 import me.elliott.nano.util.Constants
 import me.elliott.nano.util.notNull
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.*
+import me.jakejmattson.discordkt.api.Discord
+import me.jakejmattson.discordkt.api.annotations.Service
 import java.awt.Color
 import java.util.ArrayDeque
 
@@ -15,15 +24,15 @@ data class Interview(
         val answerChannel: String,
         var sendTyping: Boolean = true
 ) {
-    fun isBeingInterviewed(user: User) = user.id == intervieweeId
+    fun isBeingInterviewed(user: User) = user.id.value == intervieweeId
 }
 
 data class Question(val authorId: String, val questionText: String)
 
 @Service
 class InterviewService(private val configuration: Configuration,
-                       private val embedService: EmbedService,
-                       private val loggingService: LoggingService) {
+                       private val loggingService: LoggingService,
+                       private val discord: Discord) {
 
     private var questionReviewStore = mutableMapOf<String, Question>()
     private var questionQueue = ArrayDeque<Question>()
@@ -58,43 +67,87 @@ class InterviewService(private val configuration: Configuration,
         return currentQuestion
     }
 
-    fun editAnswerChannelMessage(privateMessageId: String, updatedText: String, jda: JDA) {
-        val answerChannel = jda.getTextChannelById(interview!!.answerChannel) ?: return
+    suspend fun editAnswerChannelMessage(privateMessageId: String, updatedText: String) {
+        val answerChannel = discord.api.getChannelOf<TextChannel>(Snowflake(interview!!.answerChannel)) ?: return
         val answerChannelMessageId = answerMessageMap[privateMessageId] ?: return
-        answerChannel.editMessageById(answerChannelMessageId, updatedText).queue()
+        answerChannel.getMessage(Snowflake(answerChannelMessageId)).edit {
+            content = updatedText
+        }
     }
 
-    fun startInterview(guild: Guild, interviewee: User, bio: String): String {
-        val jda = guild.jda
-
-        val botCategory = guild.getCategoryById(configuration.categoryId)
+    suspend fun startInterview(guild: Guild, interviewee: User, bio: String): String {
+        val botCategory = discord.api.getChannelOf<Category>(Snowflake(configuration.categoryId))
                 ?: return Constants.MISSING_CATEGORY_CONFIG
 
-        val answerChannel = botCategory.createTextChannel(interviewee.name).complete().id
 
-        val participantChannel = jda.getTextChannelById(configuration.participantChannelId)
+        val answerChannel = guild.createTextChannel {
+            name = interviewee.username
+            parentId = botCategory.id
+        }
+
+        val participantChannel = discord.api.getChannelOf<TextChannel>(Snowflake(configuration.participantChannelId))
                 ?: return Constants.MISSING_PARTICIPANT_CONFIG
 
         answerMessageMap.clear()
 
-        participantChannel.sendMessage(EmbedService.buildInterviewStartEmbed(interviewee, bio,
-                configuration.questionPrefix)).queue {
-            it.channel.pinMessageById(it.id).queue()
+        val interviewStart = participantChannel.createEmbed {
+            title = "AMA Started - Please Submit Your Questions Below."
+            color = Color.CYAN
+            description = bio
+            thumbnail {
+                url = interviewee.avatar.url
+            }
+
+            field {  }
+
+            field {
+                val questionPrefix = configuration.questionPrefix
+                name = "Please begin your question with the following prefix: $questionPrefix"
+                value = "**Example:** $questionPrefix What's one of your favorite technologies?"
+            }
         }
 
-        val privateChannel = interviewee.openPrivateChannel().complete()
+        interviewStart.pin()
+
+
+        val privateChannel = interviewee.getDmChannel().asChannelOrNull()
                 ?: return Constants.DM_CLOSED_ERROR.also {
                     loggingService.directMessagesClosedError(guild, interviewee)
                 }
 
-        val avatar = jda.selfUser.effectiveAvatarUrl
 
-        privateChannel.sendMessage(EmbedService.buildInterviewInstructionEmbed(configuration.prefix, avatar)).queue()
+        val avatar = discord.api.getSelf().avatar.url
 
-        interview = Interview(interviewee.id, answerChannel)
+        privateChannel.createEmbed {
+            thumbnail {
+                url = avatar
+            }
+
+            title = "How Do I Answer Questions?"
+            description = "When you're ready for the next question, simply " +
+                    "type: `${configuration.prefix.plus("next")}`. Whenever a question is displayed, " +
+                    "any replies you choose to provide will be sent to the interview answer channel until " +
+                    "you request the next question or end the interview."
+
+            field {
+                name = "Ending The Interview"
+                value = "When you're ready to end the interview, message a moderator and they will end it for you."
+                inline = true
+            }
+
+            field {
+                name = "Turn Typing Events On or Off"
+                value = "If you want the bot to send your typing events to the answer channel, type " +
+                        "`${configuration.prefix.plus("SendTyping")} on/off` *(**On** by default)*"
+                inline = true
+            }
+            color = Color.MAGENTA
+        }
+
+        interview = Interview(interviewee.id.value, answerChannel.name)
         loggingService.interviewStarted(guild, interviewee)
 
-        return "**Success:** ${interviewee.name}'s interview has started!"
+        return "**Success:** ${interviewee.username}'s interview has started!"
     }
 
     fun stopInterview(): Boolean {
@@ -106,35 +159,47 @@ class InterviewService(private val configuration: Configuration,
         return true
     }
 
-    fun queueQuestionForReview(question: Question, guild: Guild, author: User) {
-        val reviewChannel = guild.getTextChannelById(configuration.reviewChannelId) ?: return
+    suspend fun queueQuestionForReview(question: Question, guild: Guild, author: User) {
+        val reviewChannel = guild.getChannelOf<TextChannel>(Snowflake(configuration.reviewChannelId))
 
         loggingService.submittedQuestion(guild, author)
 
-        reviewChannel.sendMessage(embedService.buildQuestionReviewEmbed(question)).queue {
-            questionReviewStore[it.id] = question
+        val reviewEmbed = reviewChannel.createEmbed {
+            val questionAuthor = discord.api.getUser(Snowflake(question.authorId))
+            val authorName = questionAuthor?.username ?: "Unknown user"
 
-            it.addReaction("\u2705").queue()
-            it.addReaction("\u274C").queue()
+            color = Color.LIGHT_GRAY
+            description = question.questionText
+            footer {
+                text = "Asked by $authorName"
+                icon = questionAuthor?.avatar?.url
+            }
         }
+
+        questionReviewStore[reviewEmbed.id.value]
+        reviewEmbed.addReaction(Emojis.whiteCheckMark.toReaction())
+        reviewEmbed.addReaction(Emojis.x.toReaction())
+
     }
 
-    fun processReviewEvent(channel: TextChannel, moderator: User, messageId: String, approved: Boolean) {
+    suspend fun processReviewEvent(channel: TextChannel, moderator: User, messageId: String, approved: Boolean) {
         val question = questionReviewStore[messageId] ?: return
 
         if (question in questionQueue) return
 
-        val author = channel.jda.getUserById(question.authorId) ?: return
+        val author = discord.api.getUser(Snowflake(question.authorId)) ?: return
 
         if (approved) {
-            loggingService.questionApproved(channel.guild, moderator, author)
+            loggingService.questionApproved(channel.getGuild(), moderator, author)
             questionQueue.offer(question)
-        } else
-            loggingService.questionDenied(channel.guild, moderator, author)
+        } else {
+            loggingService.questionDenied(channel.getGuild(), moderator, author)
 
-        channel.retrieveMessageById(messageId).queue {
-            channel.editMessageById(it.id, it.embeds.first().toEmbedBuilder()
-                    .setColor(if (approved) Color.GREEN else Color.RED).build()).queue()
+            channel.getMessage(Snowflake(messageId)).edit {
+                embed {
+                    color = if (approved) Color.GREEN else Color.RED
+                }
+            }
         }
     }
 }

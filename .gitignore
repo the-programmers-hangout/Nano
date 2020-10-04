@@ -1,5 +1,12 @@
-nano.iml
-.idea/
-target/
+# Configuration
 config/
-old-conf/
+.env
+
+# IntelliJ
+.idea/
+*.iml
+
+# Gradle
+.gradle/
+build/
+gradle.properties

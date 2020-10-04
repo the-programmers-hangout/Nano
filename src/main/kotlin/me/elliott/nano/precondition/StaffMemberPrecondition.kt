@@ -1,24 +1,25 @@
 package me.elliott.nano.precondition
 
-import me.aberrantfox.kjdautils.api.dsl.*
-import me.aberrantfox.kjdautils.internal.command.*
+import com.gitlab.kordlib.core.entity.channel.TextChannel
+import kotlinx.coroutines.flow.*
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.util.Constants
+import me.jakejmattson.discordkt.api.dsl.*
 
-import net.dv8tion.jda.api.entities.TextChannel
+class produceIsStaffMemberPrecondition(private val configuration: Configuration) : Precondition() {
+    override suspend fun evaluate(event: CommandEvent<*>): PreconditionResult {
+        val command = event.command ?: return Fail()
+        if (command.category != Constants.INTERVIEWEE_CATEGORY) return Pass
+        if (event.channel !is TextChannel) return Fail("**Failure:** This command must be executed in a text channel.")
 
-@Precondition
-fun produceIsStaffMemberPrecondition(configuration: Configuration) = precondition {
-    val command = it.container[it.commandStruct.commandName] ?: return@precondition Pass
+        val guild = event.guild!!
 
-    if (command.category == Constants.INTERVIEWEE_CATEGORY) return@precondition Pass
-    if (it.channel !is TextChannel) return@precondition Fail("**Failure:** This command must be executed in a text channel.")
+        val staffRole = guild.roles.filter { it.name == configuration.staffRoleName }.firstOrNull() ?: return Fail()
 
-    val guild = it.guild!!
-    val staffRole = guild.getRolesByName(configuration.staffRoleName, true).firstOrNull() ?: return@precondition Fail()
+        val member = event.message.getAuthorAsMember() ?: return Fail()
+        if (member.roles.toList().contains(staffRole))
+            return Fail("Missing clearance to use this command.")
 
-    if (staffRole !in it.message.member!!.roles)
-        return@precondition Fail("Missing clearance to use this command.")
-
-    return@precondition Pass
+        return Pass
+    }
 }
