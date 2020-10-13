@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "me.elliott"
-version = "0.0.1"
+version = "1.0.0"
 description = "A Minimalistic Q&A Bot."
 
 plugins {
