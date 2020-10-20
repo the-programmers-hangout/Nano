@@ -2,6 +2,7 @@ package me.elliott.nano.listeners
 
 import com.gitlab.kordlib.core.entity.channel.TextChannel
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import kotlinx.coroutines.runBlocking
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.services.InterviewService
 import me.jakejmattson.discordkt.api.Discord
@@ -21,6 +22,10 @@ fun onGuildMessageReactionAddEvent(interviewService: InterviewService, configura
         val isApproved = emoji.name == "✅"
         val channel = getChannel() as TextChannel
 
-        interviewService.processReviewEvent(channel, getUser(), messageId.longValue, isApproved)
+        @Suppress("BlockingMethodInNonBlockingContext")
+        runBlocking {
+            interviewService.processReviewEvent(channel, getUser(), messageId.longValue, isApproved)
+        }
+
     }
 }

@@ -9,21 +9,18 @@ import me.jakejmattson.discordkt.api.arguments.RoleArg
 import me.jakejmattson.discordkt.api.dsl.Conversation
 import me.jakejmattson.discordkt.api.dsl.conversation
 
-class ConfigurationConversation(private val configuration: Configuration): Conversation() {
-    @Conversation.Start
-    fun createConfigurationConversation(guild: Guild) = conversation {
 
+class ConfigurationConversation(private val configuration: Configuration) {
+    fun createConfigurationConversation(guild: Guild) = conversation {
         val prefix = promptMessage(EveryArg, "Bot prefix:")
         val questionPrefix = promptMessage(EveryArg, "Question prefix:")
         val staffRole = promptMessage(RoleArg("Role", guild.id), "Staff role:")
         val loggingChannel = promptMessage(ChannelArg, "Logging channel:").id.longValue
         val reviewChannel = promptMessage(ChannelArg, "Review channel:").id.longValue
         val participantChannel = promptMessage(ChannelArg, "Participant channel:").id.longValue
-//        val amaCategory = promptMessage(CategoryArg, "Q&A category:").id.longValue
+        val amaCategory = promptMessage(CategoryArg, "Q&A category:").id.longValue
 
-        val amaCategory = 736645854571528244
         configuration.setup(guild, prefix, questionPrefix, staffRole, loggingChannel, reviewChannel,
-                            participantChannel, amaCategory)
-
+                participantChannel, amaCategory)
     }
 }

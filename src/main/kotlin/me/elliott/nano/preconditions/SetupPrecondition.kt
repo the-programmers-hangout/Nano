@@ -1,15 +1,12 @@
 package me.elliott.nano.preconditions
 
 import me.elliott.nano.data.Configuration
-import me.jakejmattson.discordkt.api.dsl.*
+import me.jakejmattson.discordkt.api.dsl.precondition
 
-class SetupPrecondition(private val configuration: Configuration) : Precondition() {
-    override suspend fun evaluate(event: CommandEvent<*>): PreconditionResult {
-        val command = event.command ?: return Fail()
 
-        if (command.names.contains("Setup")) return Pass
-        if (!configuration.isSetup()) return Fail("You must first use the `Setup` command.")
+fun setupPrecondition(configuration: Configuration) = precondition {
+    val command = command ?: return@precondition fail()
+    if (configuration.isSetup()) return@precondition
 
-        return Pass
-    }
+    if (!command.names.any { it.toLowerCase() == "setup" }) fail("You must first use the `Setup` command.")
 }

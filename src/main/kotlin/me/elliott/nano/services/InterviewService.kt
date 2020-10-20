@@ -153,4 +153,16 @@ class InterviewService(private val configuration: Configuration, private val dis
 
         return message
     }
+
+    fun pushQuestionBack(): String {
+        val question = getNextQuestion() ?: return "The queue is empty."
+        val interview = configuration.guild?.interview ?: return "Interview isn't running."
+
+        interview.questions.remove(question)
+        interview.questions.add(question)
+
+        configuration.save()
+
+        return "Question pushed to back of queue."
+    }
 }

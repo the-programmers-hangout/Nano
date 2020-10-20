@@ -58,14 +58,6 @@ suspend fun main() {
         mentionEmbed {
             val configuration = it.discord.getInjectionObjects(Configuration::class)
             val statsService = it.discord.getInjectionObjects(StatisticsService::class)
-            val guildConfiguration = configuration.guild ?: return@mentionEmbed
-
-            val staffRole = it.guild!!.getRole(Snowflake(guildConfiguration.staffRole))
-            val loggingChannel = it.guild!!.getChannel(Snowflake(guildConfiguration.loggingChannel))
-            val reviewChannel = it.guild!!.getChannel(Snowflake(guildConfiguration.reviewChannel))
-            val participantChannel = it.guild!!.getChannel(Snowflake(guildConfiguration.participantChannel))
-            val amaCategory = it.guild!!.getChannel(Snowflake(guildConfiguration.amaCategory))
-
 
             title = "Nano"
             description = "A Minimalistic Q&A Bot"
@@ -94,17 +86,30 @@ suspend fun main() {
                 inline = true
             }
 
-            field {
 
-                name = "Configuration"
-                value = "```" +
-                        "Staff Role: ${staffRole.name}\n" +
-                        "Logging Channel: ${loggingChannel.name}\n" +
-                        "Review Channel: ${reviewChannel.name}\n" +
-                        "Participant Channel: ${participantChannel.name}\n" +
-                        "Q&A Category: ${amaCategory.name}\n" +
-                        "```"
+            val guildConfiguration = configuration.guild
+
+            if (guildConfiguration != null) {
+                val staffRole = it.guild!!.getRole(Snowflake(guildConfiguration.staffRole))
+                val loggingChannel = it.guild!!.getChannel(Snowflake(guildConfiguration.loggingChannel))
+                val reviewChannel = it.guild!!.getChannel(Snowflake(guildConfiguration.reviewChannel))
+                val participantChannel = it.guild!!.getChannel(Snowflake(guildConfiguration.participantChannel))
+                val amaCategory = it.guild!!.getChannel(Snowflake(guildConfiguration.amaCategory))
+
+                field {
+
+                    name = "Configuration"
+                    value = "```" +
+                            "Staff Role: ${staffRole.name}\n" +
+                            "Logging Channel: ${loggingChannel.name}\n" +
+                            "Review Channel: ${reviewChannel.name}\n" +
+                            "Participant Channel: ${participantChannel.name}\n" +
+                            "Q&A Category: ${amaCategory.name}\n" +
+                            "```"
+                }
             }
+
+
 
             field {
                 val versions = it.discord.versions

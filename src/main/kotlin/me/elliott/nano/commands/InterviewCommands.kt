@@ -10,10 +10,9 @@ import me.jakejmattson.discordkt.api.arguments.BooleanArg
 import me.jakejmattson.discordkt.api.arguments.IntegerArg
 import me.jakejmattson.discordkt.api.dsl.commands
 import me.jakejmattson.discordkt.api.extensions.sendPrivateMessage
-import me.jakejmattson.discordkt.api.services.ConversationService
 import java.awt.Color
 
-fun interviewCommands(interviewService: InterviewService, discord: Discord, configuration: Configuration, conversationService: ConversationService) = commands(INTERVIEWEE_CATEGORY) {
+fun interviewCommands(interviewService: InterviewService, discord: Discord, configuration: Configuration) = commands(INTERVIEWEE_CATEGORY) {
     dmCommand("Answer") {
         description = "Answers the question on top of the queue."
         execute {
@@ -25,7 +24,10 @@ fun interviewCommands(interviewService: InterviewService, discord: Discord, conf
                 return@execute
             }
 
-            conversationService.startPrivateConversation<AnswerConversation>(author, interview, question)
+            AnswerConversation(configuration, discord)
+                    .createAnswerConversation(interview, question)
+                    .startPrivately(discord, author)
+//            conversationService.startPrivateConversation<AnswerConversation>(author, interview, question)
         }
     }
 
@@ -108,6 +110,13 @@ fun interviewCommands(interviewService: InterviewService, discord: Discord, conf
             val count = interviewService.getQuestionCount()
 
             respond("There are ${if (count == 0) "no" else count} questions in the queue")
+        }
+    }
+
+    dmCommand("Later") {
+        description = "Returns current question to the back of the queue."
+        execute {
+            respond(interviewService.pushQuestionBack())
         }
     }
 }

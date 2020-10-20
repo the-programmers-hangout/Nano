@@ -9,9 +9,8 @@ import me.jakejmattson.discordkt.api.arguments.CategoryArg
 import me.jakejmattson.discordkt.api.arguments.ChannelArg
 import me.jakejmattson.discordkt.api.arguments.RoleArg
 import me.jakejmattson.discordkt.api.dsl.commands
-import me.jakejmattson.discordkt.api.services.ConversationService
 
-fun guildConfigurationCommands(conversationService: ConversationService, configuration: Configuration) = commands("Guild Configuration") {
+fun guildConfigurationCommands(configuration: Configuration) = commands("Guild Configuration") {
     guildCommand("Setup") {
         description = "Setup a guild to use Nano"
         requiredPermissionLevel = Permission.GUILD_OWNER
@@ -22,7 +21,10 @@ fun guildConfigurationCommands(conversationService: ConversationService, configu
                 return@execute
             }
 
-            conversationService.startPublicConversation<ConfigurationConversation>(author, channel.asChannel(), guild)
+            ConfigurationConversation(configuration)
+                    .createConfigurationConversation(guild)
+                    .startPublicly(discord, author, channel.asChannel())
+
             respond("${guild.name} has been setup")
         }
     }

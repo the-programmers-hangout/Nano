@@ -15,9 +15,8 @@ import me.jakejmattson.discordkt.api.dsl.Conversation
 import me.jakejmattson.discordkt.api.dsl.conversation
 import java.awt.Color
 
-class AnswerConversation(private val configuration: Configuration, private val discord: Discord): Conversation() {
-    @Conversation.Start
-    fun createConfigurationConversation(interview: Interview, question: Question) = conversation {
+class AnswerConversation(private val configuration: Configuration, private val discord: Discord) {
+    fun createAnswerConversation(interview: Interview, question: Question) = conversation {
         val questionAuthor = discord.api.getUser(Snowflake(question.author)) ?: return@conversation
         val questionAuthorName = questionAuthor.username
 
@@ -59,14 +58,14 @@ class AnswerConversation(private val configuration: Configuration, private val d
         while (!questionsEnded) {
             val message = promptMessage(EveryArg, "**Continued response (type `end` to finish question):**")
 
-            if (message.toLowerCase().startsWith("end"))
+            if (message.toLowerCase().startsWith("end")) {
                 questionsEnded = true
+            } else {
+                val responseMessage = answerChannel.createMessage(message)
+                val messageResponse = channel.getMessage(previousUserMessageId)
 
-
-            val responseMessage = answerChannel.createMessage(message)
-            val messageResponse = channel.getMessage(previousUserMessageId)
-
-            interview.answeredQuestions[messageResponse.id.longValue] = responseMessage.id.longValue
+                interview.answeredQuestions[messageResponse.id.longValue] = responseMessage.id.longValue
+            }
         }
 
         interview.questions.removeFirst()

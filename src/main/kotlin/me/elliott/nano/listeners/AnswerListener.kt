@@ -4,11 +4,10 @@ import com.gitlab.kordlib.common.entity.ChannelType
 import com.gitlab.kordlib.common.entity.DiscordPartialMessage
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.behavior.edit
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.entity.channel.DmChannel
 import com.gitlab.kordlib.core.entity.channel.TextChannel
 import com.gitlab.kordlib.core.event.channel.TypingStartEvent
 import com.gitlab.kordlib.core.event.message.MessageUpdateEvent
+import kotlinx.coroutines.runBlocking
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.workingWidth
 import me.elliott.nano.services.InterviewService
@@ -33,23 +32,30 @@ fun onPrivateMessageUpdateEvent(configuration: Configuration, discord: Discord) 
 
         val answerChannel = discord.api.getChannelOf<TextChannel>(Snowflake(interview.answerChannel)) ?: return@on
         val answerChannelMessage = interview.answeredQuestions[messageId.longValue] ?: return@on
-        val messageToEdit = answerChannel.getMessage(Snowflake(answerChannelMessage))
 
-        if (messageToEdit.content.startsWith("**${user.username}:** ")) {
+        // some kind of coroutines bug
+        @Suppress("BlockingMethodInNonBlockingContext")
+        runBlocking {
+            var tooLong = false
+            val messageToEdit = answerChannel.getMessage(Snowflake(answerChannelMessage))
+            if (messageToEdit.content.startsWith("**${user.username}:** ")) {
+                if (newContent.length > user.workingWidth()) {
+                    user.sendPrivateMessage("The edited message content is too long. It was not updated. (${newContent.length}/${user.workingWidth()})")
 
-            if (newContent.length > user.workingWidth()) {
-                user.sendPrivateMessage("The edited message content is too long. It was not updated. (${newContent.length}/${user.workingWidth()})")
-                return@on
+                    tooLong = true
+                }
+
+                newContent = "**${user.username}:** $newContent"
             }
 
-            newContent = "**${user.username}:** $newContent"
-        }
+            if (!tooLong) {
+                messageToEdit.edit {
+                    content = newContent
+                }
 
-        messageToEdit.edit {
-            content = newContent
+                user.sendPrivateMessage("Message was updated.")
+            }
         }
-
-        user.sendPrivateMessage("Message was updated.")
     }
 }
 

@@ -9,7 +9,7 @@ import me.jakejmattson.discordkt.api.dsl.commands
 
 fun utilityCommands() = commands("Utility") {
     guildCommand("ClearChannel") {
-        requiredPermissionLevel = Permission.STAFF
+        requiredPermissionLevel = Permission.GUILD_OWNER
         description = "Clear all messages from a channel."
         execute(ChannelArg.makeNullableOptional()) {
             val channel = args.first ?: channel
