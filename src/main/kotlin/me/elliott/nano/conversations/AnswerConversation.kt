@@ -9,13 +9,11 @@ import me.elliott.nano.data.Configuration
 import me.elliott.nano.data.Interview
 import me.elliott.nano.data.Question
 import me.elliott.nano.extensions.workingWidth
-import me.jakejmattson.discordkt.api.Discord
 import me.jakejmattson.discordkt.api.arguments.EveryArg
-import me.jakejmattson.discordkt.api.dsl.Conversation
 import me.jakejmattson.discordkt.api.dsl.conversation
 import java.awt.Color
 
-class AnswerConversation(private val configuration: Configuration, private val discord: Discord) {
+class AnswerConversation(private val configuration: Configuration) {
     fun createAnswerConversation(interview: Interview, question: Question) = conversation {
         val questionAuthor = discord.api.getUser(Snowflake(question.author)) ?: return@conversation
         val questionAuthorName = questionAuthor.username

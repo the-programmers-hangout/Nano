@@ -1,7 +1,6 @@
 package me.elliott.nano.listeners
 
 import com.gitlab.kordlib.common.entity.ChannelType
-import com.gitlab.kordlib.common.entity.DiscordPartialMessage
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.behavior.edit
 import com.gitlab.kordlib.core.entity.channel.TextChannel
@@ -10,7 +9,6 @@ import com.gitlab.kordlib.core.event.message.MessageUpdateEvent
 import kotlinx.coroutines.runBlocking
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.workingWidth
-import me.elliott.nano.services.InterviewService
 import me.jakejmattson.discordkt.api.Discord
 import me.jakejmattson.discordkt.api.dsl.listeners
 import me.jakejmattson.discordkt.api.extensions.sendPrivateMessage
@@ -61,17 +59,25 @@ fun onPrivateMessageUpdateEvent(configuration: Configuration, discord: Discord) 
 
 fun onUserTypingEvent(discord: Discord, configuration: Configuration) = listeners {
     on<TypingStartEvent> {
-        val user = getUserOrNull() ?: return@on
-        if (user.isBot == true) return@on
 
-        val guildConfig = configuration.guild ?: return@on
-        val interview = guildConfig.interview ?: return@on
-        if (!interview.sendTyping) return@on
-        if (interview.interviewee != user.id.longValue) return@on
+        // stupid coroutines bug again
+        @Suppress("BlockingMethodInNonBlockingContext")
+        runBlocking {
+            val user = getUserOrNull() ?: return@runBlocking
+            if (user.isBot == true) return@runBlocking
 
-        if (channel.asChannel().type != ChannelType.DM) return@on
+            val guildConfig = configuration.guild ?: return@runBlocking
+            val interview = guildConfig.interview ?: return@runBlocking
+            if (!interview.sendTyping) return@runBlocking
+            if (interview.interviewee != user.id.longValue) return@runBlocking
 
-        val interviewChannel = discord.api.getChannelOf<TextChannel>(Snowflake(interview.answerChannel)) ?: return@on
-        interviewChannel.type()
+            if (channel.asChannel().type != ChannelType.DM) return@runBlocking
+
+
+            val interviewChannel = discord.api.getChannelOf<TextChannel>(Snowflake(interview.answerChannel))
+                    ?: return@runBlocking
+            interviewChannel.type()
+        }
+
     }
 }

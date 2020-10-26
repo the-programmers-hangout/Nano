@@ -24,10 +24,9 @@ fun interviewCommands(interviewService: InterviewService, discord: Discord, conf
                 return@execute
             }
 
-            AnswerConversation(configuration, discord)
+            AnswerConversation(configuration)
                     .createAnswerConversation(interview, question)
                     .startPrivately(discord, author)
-//            conversationService.startPrivateConversation<AnswerConversation>(author, interview, question)
         }
     }
 
