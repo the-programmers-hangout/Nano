@@ -28,7 +28,7 @@ tasks {
         archiveFileName.set("Nano.jar")
         manifest {
             attributes(
-                    "Main-Class" to "me.elliott.nano.MainAppKt"
+                    "Main-Class" to "me.elliott.nano.AppKt"
             )
         }
     }
