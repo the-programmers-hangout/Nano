@@ -1,6 +1,7 @@
 package me.elliott.nano
 
 import com.gitlab.kordlib.common.entity.Snowflake
+import com.gitlab.kordlib.gateway.Intent
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.requiredPermissionLevel
 import me.elliott.nano.services.PermissionsService
@@ -65,7 +66,7 @@ suspend fun main() {
             color = it.discord.configuration.theme
 
             thumbnail {
-                url = api.getSelf().avatar.url
+                url = it.discord.api.getSelf().avatar.url
             }
 
             field {
@@ -134,6 +135,13 @@ suspend fun main() {
                 value = "[GitHub](https://github.com/the-programmers-hangout/Nano)"
                 inline = true
             }
+        }
+
+        intents {
+            +Intent.GuildMessages
+            +Intent.DirectMessageTyping
+            +Intent.GuildMessageReactions
+            +Intent.DirectMessages
         }
     }
 }
