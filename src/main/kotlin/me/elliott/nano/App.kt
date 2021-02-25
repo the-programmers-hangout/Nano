@@ -1,7 +1,8 @@
 package me.elliott.nano
 
 import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.gateway.Intent
+import com.gitlab.kordlib.gateway.Intents
+import com.gitlab.kordlib.gateway.PrivilegedIntent
 import me.elliott.nano.data.Configuration
 import me.elliott.nano.extensions.requiredPermissionLevel
 import me.elliott.nano.services.PermissionsService
@@ -11,6 +12,7 @@ import me.jakejmattson.discordkt.api.dsl.bot
 import java.awt.Color
 import kotlin.time.ExperimentalTime
 
+@PrivilegedIntent
 @ExperimentalTime
 suspend fun main() {
     val token = System.getenv("BOT_TOKEN") ?: null
@@ -138,10 +140,9 @@ suspend fun main() {
         }
 
         intents {
-            +Intent.GuildMessages
-            +Intent.DirectMessageTyping
-            +Intent.GuildMessageReactions
-            +Intent.DirectMessages
+            Intents.all.intents.forEach {
+                +it
+            }
         }
     }
 }
